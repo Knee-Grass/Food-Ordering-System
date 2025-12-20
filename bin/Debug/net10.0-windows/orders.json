@@ -1,0 +1,24 @@
+[
+  {
+    "Id": 1001,
+    "Date": "2025-12-19T16:39:10.2735413+08:00",
+    "CustomerName": "user",
+    "Total": 210.00,
+    "Items": "Cheeseburger x1, Large Fries x1",
+    "DetailedItems": [
+      {
+        "Name": "Cheeseburger",
+        "Price": 120.00,
+        "Quantity": 1,
+        "Total": 120.00
+      },
+      {
+        "Name": "Large Fries",
+        "Price": 90.00,
+        "Quantity": 1,
+        "Total": 90.00
+      }
+    ],
+    "Status": "Pending"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "Id": 1001,
+    "Date": "2025-12-18T17:17:44.8145089+08:00",
+    "CustomerName": null,
+    "Total": 210.00,
+    "Items": "Cheeseburger x1, Large Fries x1",
+    "DetailedItems": [
+      {
+        "Name": "Cheeseburger",
+        "Price": 120.00,
+        "Quantity": 1,
+        "Total": 120.00
+      },
+      {
+        "Name": "Large Fries",
+        "Price": 90.00,
+        "Quantity": 1,
+        "Total": 90.00
+      }
+    ],
+    "Status": "Completed"
+  },
+  {
+    "Id": 1002,
+    "Date": "2025-12-18T22:52:17.6185042+08:00",
+    "CustomerName": "user",
+    "Total": 80.00,
+    "Items": "Coke 1.5L x1",
+    "DetailedItems": [
+      {
+        "Name": "Coke 1.5L",
+        "Price": 80.00,
+        "Quantity": 1,
+        "Total": 80.00
+      }
+    ],
+    "Status": "Pending"
+  },
+  {
+    "Id": 1003,
+    "Date": "2025-12-18T23:30:12.2629079+08:00",
+    "CustomerName": "jp",
+    "Total": 175.00,
+    "Items": "Cheeseburger x1, Chocolate Sundae x1",
+    "DetailedItems": [
+      {
+        "Name": "Cheeseburger",
+        "Price": 120.00,
+        "Quantity": 1,
+        "Total": 120.00
+      },
+      {
+        "Name": "Chocolate Sundae",
+        "Price": 55.00,
+        "Quantity": 1,
+        "Total": 55.00
+      }
+    ],
+    "Status": "Pending"
+  }
+]

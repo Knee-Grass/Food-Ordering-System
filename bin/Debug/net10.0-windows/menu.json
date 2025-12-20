@@ -1,0 +1,100 @@
+[
+  {
+    "Id": 1,
+    "Name": "Angus Burger",
+    "Price": 180.00,
+    "Category": "Burgers",
+    "IsAvailable": false
+  },
+  {
+    "Id": 2,
+    "Name": "Cheeseburger",
+    "Price": 120.00,
+    "Category": "Burgers",
+    "IsAvailable": true
+  },
+  {
+    "Id": 3,
+    "Name": "Chicken Sandwich",
+    "Price": 150.00,
+    "Category": "Burgers",
+    "IsAvailable": true
+  },
+  {
+    "Id": 4,
+    "Name": "Large Fries",
+    "Price": 90.00,
+    "Category": "Sides",
+    "IsAvailable": true
+  },
+  {
+    "Id": 5,
+    "Name": "Onion Rings",
+    "Price": 85.00,
+    "Category": "Sides",
+    "IsAvailable": true
+  },
+  {
+    "Id": 6,
+    "Name": "Spaghetti Platter",
+    "Price": 220.00,
+    "Category": "Pasta",
+    "IsAvailable": false
+  },
+  {
+    "Id": 7,
+    "Name": "Chicken Carbonara",
+    "Price": 240.00,
+    "Category": "Pasta",
+    "IsAvailable": true
+  },
+  {
+    "Id": 8,
+    "Name": "Family Bucket",
+    "Price": 850.00,
+    "Category": "Chicken",
+    "IsAvailable": true
+  },
+  {
+    "Id": 9,
+    "Name": "Chicken Solo",
+    "Price": 120.00,
+    "Category": "Chicken",
+    "IsAvailable": true
+  },
+  {
+    "Id": 10,
+    "Name": "Coke 1.5L",
+    "Price": 80.00,
+    "Category": "Drinks",
+    "IsAvailable": true
+  },
+  {
+    "Id": 11,
+    "Name": "Iced Tea",
+    "Price": 60.00,
+    "Category": "Drinks",
+    "IsAvailable": true
+  },
+  {
+    "Id": 12,
+    "Name": "Chocolate Sundae",
+    "Price": 55.00,
+    "Category": "Dessert",
+    "IsAvailable": true
+  },
+  {
+    "Id": 13,
+    "Name": "Matcha Latte",
+    "Price": 99,
+    "Category": "Drinks",
+    "IsAvailable": true
+  },
+  {
+    "Id": 14,
+    "Name": "Spanish Latte",
+    "Price": 75,
+    "Category": "Drinks",
+    "IsAvailable": true
+  }
+]

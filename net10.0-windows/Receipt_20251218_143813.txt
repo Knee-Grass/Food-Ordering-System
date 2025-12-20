@@ -1,0 +1,14 @@
+========== GOURMET FOOD RECEIPT ==========
+Date: 18/12/2025 2:38:13 pm
+Order ID: 1
+------------------------------------------
+Item                        Qty      Price
+------------------------------------------
+Cheese Delight                2      19.00
+Veggie Supreme                2      26.00
+Beef Tapa                     1       9.00
+------------------------------------------
+TOTAL AMOUNT:                     $54.00
+==========================================
+        Thank you for your order!         
+      Please come again! Salamat!         
