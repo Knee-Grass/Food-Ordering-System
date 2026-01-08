@@ -92,7 +92,8 @@ namespace FoodOrderingSystem.Forms
         public async Task GenerateReceiptPreviewAsync(OrderRecord order) 
         {
             _currentOrderId = order.Id;
-            _currentDate = order.Date.ToString();
+            // Use a specific format that works well with Excel/CSV
+            _currentDate = order.Date.ToString("yyyy-MM-dd HH:mm:ss");
             _currentTotal = order.Total.ToString("N2");
             _currentOrderDetails = order;
 
@@ -102,7 +103,8 @@ namespace FoodOrderingSystem.Forms
         public async Task GenerateReceiptPreviewAsync(int orderId, string? date, string? total) 
         {
             _currentOrderId = orderId;
-            _currentDate = date ?? DateTime.Now.ToString();
+            // Ensure date is formatted if passed as null
+            _currentDate = date ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             _currentTotal = total ?? "0.00";
 
             _previewPanel.Controls.Clear();
@@ -178,7 +180,10 @@ namespace FoodOrderingSystem.Forms
                             sb.AppendLine("OrderId,Date,Item,Quantity,Price,Total");
                             foreach(var item in _currentOrderDetails.DetailedItems)
                             {
-                                sb.AppendLine($"{_currentOrderId},{_currentDate},{item.Name},{item.Quantity},{item.Price},{item.Total}");
+                                // Enclose date in quotes or rely on yyyy-MM-dd format which Excel handles better
+                                // Adding a tab or single quote helps prevent Excel auto-formatting issues (like #####)
+                                string formattedDate = $"\t{_currentDate}"; 
+                                sb.AppendLine($"{_currentOrderId},{formattedDate},{item.Name},{item.Quantity},{item.Price},{item.Total}");
                             }
                         }
                         else // Text
@@ -269,7 +274,11 @@ namespace FoodOrderingSystem.Forms
                         {
                             // Escape commas in Items string
                             string safeItems = $"\"{order.Items.Replace("\"", "\"\"")}\"";
-                            sb.AppendLine($"{order.Id},{order.Date},{order.CustomerName},{order.Total},{order.Status},{safeItems}");
+                            // Format date explicitly for CSV to avoid ##### in Excel (using yyyy-MM-dd HH:mm)
+                            // Prepending a tab (\t) forces Excel to treat it as text, preventing ##### for column width issues
+                            string formattedDate = $"\t{order.Date.ToString("yyyy-MM-dd HH:mm")}"; 
+                            
+                            sb.AppendLine($"{order.Id},{formattedDate},{order.CustomerName},{order.Total},{order.Status},{safeItems}");
                             monthlyTotal += order.Total;
                         }
 
