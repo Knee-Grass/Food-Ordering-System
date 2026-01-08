@@ -15,10 +15,11 @@ namespace FoodOrderingSystem.Models
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public int CategoryId { get; set; } // Link to Category Table
-        public string Category { get; set; } = string.Empty; // Category Name
+        public int CategoryId { get; set; } 
+        public string Category { get; set; } = string.Empty; 
         public bool IsAvailable { get; set; } = true;
         public int Quantity { get; set; }
+        public string ImagePath { get; set; } = string.Empty; // NEW: Image Path Property
     }
 
     public class CartItem

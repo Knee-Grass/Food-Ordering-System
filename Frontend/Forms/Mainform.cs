@@ -8,6 +8,7 @@ using FoodOrderingSystem.Controls;
 using FoodOrderingSystem.Data;
 using FoodOrderingSystem.Models;
 using FoodOrderingSystem.Backend.Config;
+using System.IO;
 
 namespace FoodOrderingSystem.Forms
 {
@@ -16,7 +17,7 @@ namespace FoodOrderingSystem.Forms
         private readonly DatabaseService _dbService;
         private List<CartItem> _cartItems;
         private List<FoodItem> _allFoodItems; 
-        private List<Category> _allCategories; // Cache for categories
+        private List<Category> _allCategories; 
         
         private string _userRole;
         private string _username;
@@ -34,6 +35,7 @@ namespace FoodOrderingSystem.Forms
         private Panel _rightCartPanel = null!; 
         private Button? _currentCategoryBtn;
         private Label _lblPageTitle = null!; 
+        private ComboBox? _cbMonthFilter; // NEW: Month Filter
         
         private Button? _btnOrders; 
         private Button? _btnUsers;
@@ -79,26 +81,19 @@ namespace FoodOrderingSystem.Forms
             }
         }
 
-        // Fetches both Products and Categories to ensure sidebar and menu are up to date
         private async Task LoadDataAsync()
         {
-            // Only show loading if empty
             if (_menuContainer != null && _menuContainer.Controls.Count == 0)
             {
                 Label loading = new Label { Text = "Loading Menu...", AutoSize = true, Font = new Font("Segoe UI", 16F), Padding = new Padding(20) };
                 _menuContainer.Controls.Add(loading);
             }
 
-            // 1. Fetch Products from DB
             _allFoodItems = await _dbService.GetFoodItemsAsync();
-            
-            // 2. Fetch Categories from DB
             _allCategories = await _dbService.GetCategoriesAsync();
 
-            // 3. Refresh Sidebar with latest categories
             PopulateSidebar();
             
-            // 4. Refresh Menu View if in User Mode
             if (_userRole == "User")
             {
                 FilterMenu("All");
@@ -111,7 +106,6 @@ namespace FoodOrderingSystem.Forms
             _sidebarCategories.Controls.Clear();
             if (_userRole != "User") return;
 
-            // Use the fetched _allCategories list
             var catNames = _allCategories.Select(x => x.Name).OrderBy(x => x).ToList();
             catNames.Insert(0, "All"); 
 
@@ -136,7 +130,6 @@ namespace FoodOrderingSystem.Forms
 
             _menuContainer.Controls.Clear();
 
-            // Filter items based on selected category string
             var itemsToShow = category == "All" ? _allFoodItems : _allFoodItems.Where(i => i.Category == category).ToList();
 
             if (itemsToShow.Count == 0)
@@ -435,7 +428,7 @@ namespace FoodOrderingSystem.Forms
 
                 ProductDialog dlg = new ProductDialog(cats);
                 if(dlg.ShowDialog() == DialogResult.OK) {
-                    _dbService.AddProduct(dlg.PName, dlg.PPrice, dlg.PCategoryId, dlg.PQuantity);
+                    _dbService.AddProduct(dlg.PName, dlg.PPrice, dlg.PCategoryId, dlg.PQuantity, dlg.PImagePath);
                     
                     // REFRESH ENTIRE APP DATA
                     LoadProductsData();
@@ -453,13 +446,25 @@ namespace FoodOrderingSystem.Forms
                 Panel card = new Panel { Width = itemWidth, Height = 80, BackColor = Color.White, Margin = new Padding(0, 0, 0, 10) };
                 card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid);
 
-                Label lblName = new Label { Text = item.Name, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(20, 25), AutoSize = true };
-                Label lblPrice = new Label { Text = $"₱{item.Price:F2}", Font = new Font("Segoe UI", 12F), ForeColor = DbConfig.PrimaryColor, Location = new Point(250, 25), AutoSize = true };
+                // Add Image Thumbnail in List
+                PictureBox pb = new PictureBox { Size = new Size(60, 60), Location = new Point(10, 10), SizeMode = PictureBoxSizeMode.Zoom, BorderStyle = BorderStyle.FixedSingle };
+                if(!string.IsNullOrEmpty(item.ImagePath) && File.Exists(item.ImagePath))
+                {
+                    try { pb.Image = Image.FromFile(item.ImagePath); } catch {}
+                }
+                else
+                {
+                    // Placeholder logic - simple colored box or text
+                    pb.BackColor = Color.LightGray; 
+                }
+
+                Label lblName = new Label { Text = item.Name, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(80, 25), AutoSize = true };
+                Label lblPrice = new Label { Text = $"₱{item.Price:F2}", Font = new Font("Segoe UI", 12F), ForeColor = DbConfig.PrimaryColor, Location = new Point(300, 25), AutoSize = true };
                 
                 // Show Category Name
-                Label lblCat = new Label { Text = item.Category, Font = new Font("Segoe UI", 9F, FontStyle.Italic), ForeColor = Color.Gray, Location = new Point(20, 50), AutoSize = true };
+                Label lblCat = new Label { Text = item.Category, Font = new Font("Segoe UI", 9F, FontStyle.Italic), ForeColor = Color.Gray, Location = new Point(80, 50), AutoSize = true };
 
-                Label lblQty = new Label { Text = $"Stock: {item.Quantity}", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = (item.Quantity > 0 ? Color.DarkSlateGray : Color.Red), Location = new Point(360, 28), AutoSize = true };
+                Label lblQty = new Label { Text = $"Stock: {item.Quantity}", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = (item.Quantity > 0 ? Color.DarkSlateGray : Color.Red), Location = new Point(410, 28), AutoSize = true };
                 
                 string stockText = item.IsAvailable ? "Enabled" : "Disabled";
                 Color stockColor = item.IsAvailable ? Color.Gray : Color.Red;
@@ -477,7 +482,7 @@ namespace FoodOrderingSystem.Forms
                     var cats = await _dbService.GetCategoriesAsync();
                     ProductDialog dlg = new ProductDialog(cats, item);
                     if(dlg.ShowDialog() == DialogResult.OK) {
-                        _dbService.UpdateProduct(item.Id, dlg.PName, dlg.PPrice, dlg.PCategoryId, dlg.PQuantity);
+                        _dbService.UpdateProduct(item.Id, dlg.PName, dlg.PPrice, dlg.PCategoryId, dlg.PQuantity, dlg.PImagePath);
                         
                         // REFRESH ENTIRE APP DATA
                         LoadProductsData();
@@ -496,6 +501,7 @@ namespace FoodOrderingSystem.Forms
                      }
                 };
 
+                card.Controls.Add(pb);
                 card.Controls.Add(lblCat); 
                 card.Controls.Add(lblQty); 
                 card.Controls.Add(btnToggle); card.Controls.Add(btnEdit); card.Controls.Add(btnDelete);
@@ -508,16 +514,15 @@ namespace FoodOrderingSystem.Forms
         {
             _usersContainer.Controls.Clear();
             
-            // Added Header with "Add User" button
             Panel header = new Panel { Width = _usersContainer.Width - 60, Height = 50 };
             Button btnAdd = new Button { Text = "+ Add User", BackColor = Color.Green, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(150, 40), Location = new Point(0, 5) };
             btnAdd.Click += (s, e) => {
-                AdminDialog dlg = new AdminDialog(); 
-                dlg.Text = "Add New User"; // Custom title for this context
-                if(dlg.ShowDialog() == DialogResult.OK) {
-                    if(_dbService.RegisterUser(dlg.Username, dlg.Password)) LoadUsersData();
-                    else MessageBox.Show("Username already exists.");
-                }
+                RegisterForm dlg = new RegisterForm(); 
+                // We show it as a dialog here for the admin to add a user instantly
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.ShowDialog();
+                // Refresh list after closing
+                LoadUsersData();
             };
             header.Controls.Add(btnAdd);
             _usersContainer.Controls.Add(header);
@@ -597,18 +602,102 @@ namespace FoodOrderingSystem.Forms
         {
             _historyContainer.Controls.Clear();
             var allOrders = await _dbService.GetOrdersAsync();
+            
+            // Add Month Filter UI if not already added
+            if (_cbMonthFilter == null)
+            {
+                Panel filterPanel = new Panel { Dock = DockStyle.Top, Height = 50, BackColor = Color.WhiteSmoke };
+                Label lblFilter = new Label { Text = "Filter by Month:", AutoSize = true, Location = new Point(20, 15), Font = new Font("Segoe UI", 10) };
+                _cbMonthFilter = new ComboBox { Location = new Point(130, 12), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10) };
+                
+                // Populate months (Current month + previous 11)
+                _cbMonthFilter.Items.Add("All Time");
+                for (int i = 0; i < 12; i++)
+                {
+                    _cbMonthFilter.Items.Add(DateTime.Now.AddMonths(-i).ToString("MMMM yyyy"));
+                }
+                _cbMonthFilter.SelectedIndex = 0;
+                _cbMonthFilter.SelectedIndexChanged += (s, e) => LoadHistoryData(); // Reload on change
+
+                filterPanel.Controls.Add(lblFilter);
+                filterPanel.Controls.Add(_cbMonthFilter);
+                _historyContainer.Controls.Add(filterPanel);
+            }
+            else
+            {
+                // Re-add existing filter panel to top (since Clear() removed controls)
+                // We need to recreate the panel container structure or just ensure the filter logic is applied
+                // Better approach: Don't clear the filter combo, just the receipts. 
+                // But FlowLayoutPanel makes this tricky. Let's just recreate the panel wrapper each time or manage controls carefully.
+                // Simple fix: Re-add the *existing* combobox to a new panel
+                Panel filterPanel = new Panel { Dock = DockStyle.Top, Height = 50, BackColor = Color.WhiteSmoke, Width = _historyContainer.Width - 40 };
+                Label lblFilter = new Label { Text = "Filter by Month:", AutoSize = true, Location = new Point(20, 15), Font = new Font("Segoe UI", 10) };
+                // Reuse logic but recreate controls to avoid disposal issues if cleared
+                // Actually, if we just filtered _allOrders before loop, that's better.
+                // We need the UI controls to persist.
+                
+                // Let's create a dedicated top panel for history view outside the flow layout? 
+                // No, sticking to FlowLayout for simplicity, just re-insert header.
+                
+                // If we are refreshing, we want to keep the selected index. 
+                // So we capture state and recreate.
+                int selectedIndex = _cbMonthFilter != null ? _cbMonthFilter.SelectedIndex : 0;
+                
+                _cbMonthFilter = new ComboBox { Location = new Point(130, 12), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10) };
+                _cbMonthFilter.Items.Add("All Time");
+                for (int i = 0; i < 12; i++) _cbMonthFilter.Items.Add(DateTime.Now.AddMonths(-i).ToString("MMMM yyyy"));
+                _cbMonthFilter.SelectedIndex = selectedIndex;
+                _cbMonthFilter.SelectedIndexChanged += (s, e) => LoadHistoryData();
+
+                filterPanel.Controls.Add(lblFilter);
+                filterPanel.Controls.Add(_cbMonthFilter);
+                _historyContainer.Controls.Add(filterPanel);
+            }
+
+            // FILTER LOGIC
+            if (_cbMonthFilter != null && _cbMonthFilter.SelectedIndex > 0)
+            {
+                string selected = _cbMonthFilter.SelectedItem.ToString()!;
+                allOrders = allOrders.Where(o => o.Date.ToString("MMMM yyyy") == selected).ToList();
+            }
+
             allOrders = allOrders.OrderByDescending(o => o.Date).ToList();
 
-            if (allOrders.Count == 0) { _historyContainer.Controls.Add(new Label { Text = "No transaction history available.", Font = new Font("Segoe UI", 12F), AutoSize = true, Padding = new Padding(20) }); return; }
+            if (allOrders.Count == 0) 
+            { 
+                // Add empty label after the filter panel
+                _historyContainer.Controls.Add(new Label { Text = "No transaction history available.", Font = new Font("Segoe UI", 12F), AutoSize = true, Padding = new Padding(20) }); 
+                return; 
+            }
 
             foreach(var order in allOrders)
             {
-                Panel receipt = new Panel { Width = 280, Height = 420, BackColor = Color.White, Margin = new Padding(15) };
+                Panel receipt = new Panel { Width = 280, Height = 460, BackColor = Color.White, Margin = new Padding(15) };
                 receipt.Paint += (s, e) => { ControlPaint.DrawBorder(e.Graphics, receipt.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid); using (Pen pen = new Pen(Color.Gray, 2)) { pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash; e.Graphics.DrawLine(pen, 15, 80, receipt.Width - 15, 80); e.Graphics.DrawLine(pen, 15, receipt.Height - 140, receipt.Width - 15, receipt.Height - 140); } };
+
+                // NEW: Print/Download Button
+                Button btnPrint = new Button 
+                { 
+                    Text = "🖨 Print", 
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold), 
+                    BackColor = Color.Teal, 
+                    ForeColor = Color.White, 
+                    FlatStyle = FlatStyle.Flat, 
+                    Size = new Size(80, 30),
+                    Location = new Point(receipt.Width - 95, 5), 
+                    Cursor = Cursors.Hand 
+                };
+                btnPrint.FlatAppearance.BorderSize = 0;
+                btnPrint.Click += async (s, e) => {
+                    HistoryForm preview = new HistoryForm();
+                    await preview.GenerateReceiptPreviewAsync(order);
+                    preview.ShowDialog();
+                };
+                receipt.Controls.Add(btnPrint); btnPrint.BringToFront();
 
                 if (_userRole == "Admin" || _userRole == "SuperAdmin")
                 {
-                    Label btnDelete = new Label { Text = "✕", Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = Color.IndianRed, Cursor = Cursors.Hand, AutoSize = true, Location = new Point(receipt.Width - 30, 5) };
+                    Label btnDelete = new Label { Text = "✕", Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = Color.IndianRed, Cursor = Cursors.Hand, AutoSize = true, Location = new Point(10, 5) };
                     btnDelete.Click += async (s, e) => { if(MessageBox.Show("Are you sure you want to delete this record permanently?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) { await _dbService.DeleteOrderAsync(order.Id); LoadHistoryData(); } };
                     receipt.Controls.Add(btnDelete); btnDelete.BringToFront();
 
@@ -701,19 +790,43 @@ namespace FoodOrderingSystem.Forms
 
         private Panel CreateFoodCard(FoodItem item)
         {
-            Panel card = new Panel { Width = 200, Height = 220, BackColor = Color.White, Margin = new Padding(10) };
+            Panel card = new Panel { Width = 200, Height = 250, BackColor = Color.White, Margin = new Padding(10) }; // Taller to fit image
             card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.FromArgb(230,230,230), ButtonBorderStyle.Solid);
-            Label lblName = new Label { Text = item.Name, Font = new Font("Segoe UI", 11F, FontStyle.Bold), ForeColor = DbConfig.TextColor, Dock = DockStyle.Top, Height = 60, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true, Padding = new Padding(5) };
+            
+            // Image Logic
+            PictureBox pb = new PictureBox 
+            { 
+                Size = new Size(180, 100), // Larger Image Area
+                Location = new Point(10, 10), 
+                SizeMode = PictureBoxSizeMode.Zoom, 
+                BorderStyle = BorderStyle.None 
+            };
+
+            if(!string.IsNullOrEmpty(item.ImagePath) && File.Exists(item.ImagePath))
+            {
+                try { pb.Image = Image.FromFile(item.ImagePath); } 
+                catch { SetPlaceholder(pb, item.Name); }
+            }
+            else
+            {
+                SetPlaceholder(pb, item.Name);
+            }
+
+            Label lblName = new Label { Text = item.Name, Font = new Font("Segoe UI", 11F, FontStyle.Bold), ForeColor = DbConfig.TextColor, Dock = DockStyle.Top, Height = 40, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true, Padding = new Padding(5) };
+            
+            // Re-order controls for layout: Image is manual pos, others are docked
+            // So we need a container for text
+            Panel textPanel = new Panel { Location = new Point(0, 110), Size = new Size(200, 140) };
+            
             Label lblPrice = new Label { Text = $"₱{item.Price:F2}", Font = new Font("Segoe UI", 13F, FontStyle.Bold), ForeColor = DbConfig.PrimaryColor, Dock = DockStyle.Top, Height = 30, TextAlign = ContentAlignment.MiddleCenter };
             
-            // NEW: Show Quantity (or 'Low Stock') on card
+            // Stock Logic
             string subText = item.Category;
             if(item.Quantity < 10 && item.Quantity > 0) subText += $" • Only {item.Quantity} left!";
             Label lblCat = new Label { Text = subText, Font = new Font("Segoe UI", 8F), ForeColor = Color.Gray, Dock = DockStyle.Top, Height = 20, TextAlign = ContentAlignment.MiddleCenter };
             
             ModernButton btnAdd = new ModernButton { Text = "Add to Order", BackColor = DbConfig.PrimaryColor, Dock = DockStyle.Bottom, Height = 40 };
 
-            // NEW: Logic based on Quantity + IsAvailable
             if (!item.IsAvailable || item.Quantity <= 0) 
             { 
                 btnAdd.Text = "Out of Stock"; 
@@ -727,7 +840,6 @@ namespace FoodOrderingSystem.Forms
             else 
             { 
                 btnAdd.Click += (s, e) => { 
-                    // NEW: Check stock against cart
                     var existing = _cartItems.FirstOrDefault(c => c.Food.Id == item.Id); 
                     int currentQtyInCart = existing?.Quantity ?? 0;
                     
@@ -744,7 +856,31 @@ namespace FoodOrderingSystem.Forms
                 }; 
             }
 
-            card.Controls.Add(btnAdd); card.Controls.Add(lblPrice); card.Controls.Add(lblName); card.Controls.Add(lblCat); return card;
+            textPanel.Controls.Add(btnAdd);
+            textPanel.Controls.Add(lblCat);
+            textPanel.Controls.Add(lblPrice);
+            textPanel.Controls.Add(lblName);
+
+            card.Controls.Add(textPanel);
+            card.Controls.Add(pb); 
+            return card;
+        }
+
+        private void SetPlaceholder(PictureBox pb, string name)
+        {
+            // Create a simple bitmap with the first letter
+            Bitmap bmp = new Bitmap(pb.Width, pb.Height);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.LightGray);
+                string letter = string.IsNullOrEmpty(name) ? "?" : name.Substring(0, 1).ToUpper();
+                using (Font font = new Font("Segoe UI", 40, FontStyle.Bold))
+                {
+                    SizeF textSize = g.MeasureString(letter, font);
+                    g.DrawString(letter, font, Brushes.Gray, (pb.Width - textSize.Width) / 2, (pb.Height - textSize.Height) / 2);
+                }
+            }
+            pb.Image = bmp;
         }
 
         private async void BtnCheckout_Click(object? sender, EventArgs e)
@@ -757,8 +893,6 @@ namespace FoodOrderingSystem.Forms
                 MessageBox.Show($"Order #{orderId} Placed Successfully!", "Success"); 
                 _cartItems.Clear(); 
                 UpdateCartUI(); 
-                
-                // Refresh menu to show updated stock
                 await LoadDataAsync();
             }
             catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); } finally { if (btn != null) { btn.Enabled = true; btn.Text = "Checkout"; } }
@@ -781,7 +915,6 @@ namespace FoodOrderingSystem.Forms
                 
                 btnMinus.Click += (s, e) => { item.Quantity--; if (item.Quantity <= 0) _cartItems.Remove(item); UpdateCartUI(); };
                 
-                // NEW: Prevent adding more than stock in cart view too
                 btnPlus.Click += (s, e) => { 
                     if (item.Quantity + 1 > item.Food.Quantity) {
                          MessageBox.Show($"Max stock reached for {item.Food.Name}");

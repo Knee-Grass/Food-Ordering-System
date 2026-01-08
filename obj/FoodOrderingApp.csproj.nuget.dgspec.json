@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\User\\Documents\\FoodOrderingSys\\FoodOrderingApp.csproj": {}
+    "C:\\Users\\User\\OneDrive\\Documents\\nigga\\FoodOrderingApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\User\\Documents\\FoodOrderingSys\\FoodOrderingApp.csproj": {
+    "C:\\Users\\User\\OneDrive\\Documents\\nigga\\FoodOrderingApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\Documents\\FoodOrderingSys\\FoodOrderingApp.csproj",
+        "projectUniqueName": "C:\\Users\\User\\OneDrive\\Documents\\nigga\\FoodOrderingApp.csproj",
         "projectName": "FoodOrderingApp",
-        "projectPath": "C:\\Users\\User\\Documents\\FoodOrderingSys\\FoodOrderingApp.csproj",
+        "projectPath": "C:\\Users\\User\\OneDrive\\Documents\\nigga\\FoodOrderingApp.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\Documents\\FoodOrderingSys\\obj\\",
+        "outputPath": "C:\\Users\\User\\OneDrive\\Documents\\nigga\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"

@@ -42,7 +42,7 @@ namespace FoodOrderingSystem.Forms
             // Title
             Label lblTitle = new Label
             {
-                Text = "GOURMET\nSYSTEM",
+                Text = "KNEEGRASS\nPOS",
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 24, FontStyle.Bold),
                 AutoSize = false,
