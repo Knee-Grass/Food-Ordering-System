@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\xampp\\htdocs\\pos\\FoodOrderingApp.csproj": {}
+    "C:\\Users\\User\\OneDrive\\Documents\\foodhub\\FoodOrderingApp.csproj": {}
   },
   "projects": {
-    "C:\\xampp\\htdocs\\pos\\FoodOrderingApp.csproj": {
+    "C:\\Users\\User\\OneDrive\\Documents\\foodhub\\FoodOrderingApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\xampp\\htdocs\\pos\\FoodOrderingApp.csproj",
+        "projectUniqueName": "C:\\Users\\User\\OneDrive\\Documents\\foodhub\\FoodOrderingApp.csproj",
         "projectName": "FoodOrderingApp",
-        "projectPath": "C:\\xampp\\htdocs\\pos\\FoodOrderingApp.csproj",
-        "packagesPath": "C:\\Users\\Billy Godoy\\.nuget\\packages\\",
-        "outputPath": "C:\\xampp\\htdocs\\pos\\obj\\",
+        "projectPath": "C:\\Users\\User\\OneDrive\\Documents\\foodhub\\FoodOrderingApp.csproj",
+        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\User\\OneDrive\\Documents\\foodhub\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Billy Godoy\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0-windows"

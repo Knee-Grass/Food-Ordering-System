@@ -39,18 +39,44 @@ namespace FoodOrderingSystem.Forms
             btnClose.Click += (s, e) => Application.Exit();
             this.Controls.Add(btnClose);
 
-            // Title
-            Label lblTitle = new Label
+            // Title (FoodHub) - Using FlowLayoutPanel for dual-color text
+            FlowLayoutPanel pnlLogo = new FlowLayoutPanel
             {
-                Text = "KNEEGRASS\nPOS",
+                FlowDirection = FlowDirection.TopDown, // Changed to TopDown for newline
+                AutoSize = true,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0),
+                Margin = new Padding(0)
+            };
+
+            Label lblFood = new Label
+            {
+                Text = "Food",
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 24, FontStyle.Bold),
-                AutoSize = false,
-                Size = new Size(400, 100),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Location = new Point(0, 50)
+                AutoSize = true,
+                Margin = new Padding(0),
+                Padding = new Padding(0)
             };
-            this.Controls.Add(lblTitle);
+
+            Label lblHub = new Label
+            {
+                Text = "Hub",
+                ForeColor = Color.Orange, // "Hub" in Orange
+                Font = new Font("Segoe UI", 24, FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, -10, 0, 0), // Negative top margin to reduce vertical gap
+                Padding = new Padding(0)
+            };
+
+            pnlLogo.Controls.Add(lblFood);
+            pnlLogo.Controls.Add(lblHub);
+            
+            // Approximate centering: (FormWidth 400 - ApproxLogoWidth 90) / 2 = 155
+            // Adjusted location for stacked text
+            pnlLogo.Location = new Point(155, 50); 
+            this.Controls.Add(pnlLogo);
 
             // Username
             _txtUser = CreateInput("Username", 180);
@@ -72,10 +98,10 @@ namespace FoodOrderingSystem.Forms
             btnLogin.Click += BtnLogin_Click;
             this.Controls.Add(btnLogin);
 
-            // Register Label (Updated Text)
+            // Register Label
             Label lblRegister = new Label
             {
-                Text = "Don't have an account? Register now", // Updated as requested
+                Text = "Don't have an account? Register now",
                 ForeColor = Color.DeepSkyBlue,
                 Font = new Font("Segoe UI", 10, FontStyle.Underline),
                 AutoSize = true,

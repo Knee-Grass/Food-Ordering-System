@@ -9,22 +9,23 @@ namespace FoodOrderingSystem.Forms
         public string CategoryName { get; private set; } = string.Empty;
         private TextBox _txtName = new TextBox();
 
-        public CategoryDialog()
+        public CategoryDialog(string existingName = "")
         {
-            Text = "Add Category";
+            Text = string.IsNullOrEmpty(existingName) ? "Add Category" : "Edit Category";
             Size = new Size(350, 200);
             StartPosition = FormStartPosition.CenterParent;
             BackColor = Color.White;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
 
-            InitializeUI();
+            InitializeUI(existingName);
         }
 
-        private void InitializeUI()
+        private void InitializeUI(string existingName)
         {
             Label l1 = new Label { Text = "Category Name:", Location = new Point(20, 20), AutoSize = true, Font = new Font("Segoe UI", 10) };
             _txtName = new TextBox { Location = new Point(20, 45), Width = 280, Font = new Font("Segoe UI", 10) };
+            _txtName.Text = existingName;
 
             Button btnSave = new Button 
             { 

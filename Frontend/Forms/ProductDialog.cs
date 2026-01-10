@@ -13,29 +13,29 @@ namespace FoodOrderingSystem.Forms
         public decimal PPrice { get; private set; } = 0;
         public int PCategoryId { get; private set; } = 0; 
         public int PQuantity { get; private set; } = 0;
-        public string PImagePath { get; private set; } = string.Empty; // NEW: Image Path
+        public string PImageData { get; private set; } = string.Empty; 
         
-        // Define controls
         private TextBox _txtName;
         private TextBox _txtPrice;
         private ComboBox _cbCat;
         private NumericUpDown _numQty;
-        private PictureBox _pbImage; // NEW
-        private Button _btnUpload; // NEW
-        private Label _lblPath; // NEW
+        private PictureBox _pbImage; 
+        private Button _btnUpload; 
+        private Button _btnRemoveImage; 
+        private Label _lblPath;
 
-        // Flag to track if we should close safely after loading
         private bool _initFailed = false;
 
+        // Constructor accepting Category List - fixes Mainform error
         public ProductDialog(List<Category> categories, FoodItem? item = null)
         {
-            // Initialize components immediately in constructor
             _txtName = new TextBox();
             _txtPrice = new TextBox();
             _cbCat = new ComboBox();
             _numQty = new NumericUpDown();
             _pbImage = new PictureBox(); 
             _btnUpload = new Button(); 
+            _btnRemoveImage = new Button();
             _lblPath = new Label(); 
 
             try
@@ -64,7 +64,7 @@ namespace FoodOrderingSystem.Forms
         private void SetupFormProperties(FoodItem? item)
         {
             Text = item == null ? "Add Product" : "Edit Product"; 
-            Size = new Size(550, 450); // Wider for image
+            Size = new Size(550, 480); 
             StartPosition = FormStartPosition.CenterParent;
             this.BackColor = Color.White;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -73,26 +73,22 @@ namespace FoodOrderingSystem.Forms
 
         private void InitializeControls()
         {
-            // Name
             Label l1 = new Label { Text = "Name:", Location = new Point(20, 20), AutoSize = true, Font = new Font("Segoe UI", 10) };
             _txtName.Location = new Point(20, 45);
             _txtName.Width = 250;
             _txtName.Font = new Font("Segoe UI", 10);
 
-            // Price
             Label l2 = new Label { Text = "Price:", Location = new Point(20, 85), AutoSize = true, Font = new Font("Segoe UI", 10) };
             _txtPrice.Location = new Point(20, 110);
             _txtPrice.Width = 250;
             _txtPrice.Font = new Font("Segoe UI", 10);
 
-            // Category
             Label l3 = new Label { Text = "Category:", Location = new Point(20, 150), AutoSize = true, Font = new Font("Segoe UI", 10) };
             _cbCat.Location = new Point(20, 175);
             _cbCat.Width = 250;
             _cbCat.Font = new Font("Segoe UI", 10);
             _cbCat.DropDownStyle = ComboBoxStyle.DropDownList;
             
-            // Quantity
             Label l4 = new Label { Text = "Stock Quantity:", Location = new Point(20, 215), AutoSize = true, Font = new Font("Segoe UI", 10) };
             _numQty.BeginInit(); 
             _numQty.Location = new Point(20, 240);
@@ -102,7 +98,6 @@ namespace FoodOrderingSystem.Forms
             _numQty.Maximum = 10000;
             _numQty.EndInit();
 
-            // Right Column (Image Upload)
             Label lImage = new Label { Text = "Product Image:", Location = new Point(300, 20), AutoSize = true, Font = new Font("Segoe UI", 10) };
             
             _pbImage.Location = new Point(300, 45);
@@ -113,22 +108,30 @@ namespace FoodOrderingSystem.Forms
 
             _btnUpload.Text = "Choose Image";
             _btnUpload.Location = new Point(300, 255);
-            _btnUpload.Size = new Size(200, 35);
+            _btnUpload.Size = new Size(95, 35);
             _btnUpload.BackColor = Color.Teal;
             _btnUpload.ForeColor = Color.White;
             _btnUpload.FlatStyle = FlatStyle.Flat;
             _btnUpload.Click += BtnUpload_Click;
+
+            _btnRemoveImage.Text = "Remove";
+            _btnRemoveImage.Location = new Point(405, 255);
+            _btnRemoveImage.Size = new Size(95, 35);
+            _btnRemoveImage.BackColor = Color.IndianRed;
+            _btnRemoveImage.ForeColor = Color.White;
+            _btnRemoveImage.FlatStyle = FlatStyle.Flat;
+            _btnRemoveImage.Click += BtnRemoveImage_Click;
 
             _lblPath.Location = new Point(300, 295);
             _lblPath.Size = new Size(200, 20);
             _lblPath.Font = new Font("Segoe UI", 8);
             _lblPath.ForeColor = Color.Gray;
             _lblPath.AutoEllipsis = true;
+            _lblPath.Text = "No image selected";
 
-            // Buttons
             Button btnSave = new Button 
             { 
-                Text = "Save", Location = new Point(20, 340), Size = new Size(130, 40), 
+                Text = "Save", Location = new Point(20, 360), Size = new Size(130, 40), 
                 BackColor = Color.FromArgb(76, 175, 80), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
             };
             btnSave.FlatAppearance.BorderSize = 0;
@@ -136,7 +139,7 @@ namespace FoodOrderingSystem.Forms
 
             Button btnCancel = new Button 
             { 
-                Text = "Cancel", Location = new Point(170, 340), Size = new Size(130, 40), 
+                Text = "Cancel", Location = new Point(170, 360), Size = new Size(130, 40), 
                 BackColor = Color.Gray, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
             };
             btnCancel.FlatAppearance.BorderSize = 0;
@@ -147,7 +150,7 @@ namespace FoodOrderingSystem.Forms
 
             Controls.AddRange(new Control[] { 
                 l1, _txtName, l2, _txtPrice, l3, _cbCat, l4, _numQty, 
-                lImage, _pbImage, _btnUpload, _lblPath,
+                lImage, _pbImage, _btnUpload, _btnRemoveImage, _lblPath,
                 btnSave, btnCancel 
             });
         }
@@ -176,19 +179,33 @@ namespace FoodOrderingSystem.Forms
             try { _numQty.Value = qty; }
             catch { _numQty.Value = _numQty.Minimum; }
 
-            // Load Image
-            PImagePath = item?.ImagePath ?? string.Empty;
-            if (!string.IsNullOrEmpty(PImagePath) && File.Exists(PImagePath))
+            PImageData = item?.ImageData ?? string.Empty;
+            UpdateImagePreview();
+        }
+
+        private void UpdateImagePreview()
+        {
+            if (!string.IsNullOrEmpty(PImageData))
             {
                 try 
                 { 
-                    _pbImage.Image = Image.FromFile(PImagePath); 
-                    _lblPath.Text = Path.GetFileName(PImagePath);
+                    if (_pbImage.Image != null) _pbImage.Image.Dispose();
+                    byte[] imageBytes = Convert.FromBase64String(PImageData);
+                    using (MemoryStream ms = new MemoryStream(imageBytes))
+                    {
+                        _pbImage.Image = Image.FromStream(ms);
+                    }
+                    _lblPath.Text = "Image Loaded";
                 }
-                catch { _lblPath.Text = "Image load error"; }
+                catch 
+                { 
+                    _pbImage.Image = null;
+                    _lblPath.Text = "Image load error"; 
+                }
             }
             else
             {
+                _pbImage.Image = null;
                 _lblPath.Text = "No image selected";
             }
         }
@@ -197,22 +214,27 @@ namespace FoodOrderingSystem.Forms
         {
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
-                ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+                ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif";
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     try
                     {
-                        Image img = Image.FromFile(ofd.FileName);
-                        _pbImage.Image = img;
-                        PImagePath = ofd.FileName; 
-                        _lblPath.Text = Path.GetFileName(ofd.FileName);
+                        byte[] imageBytes = File.ReadAllBytes(ofd.FileName);
+                        PImageData = Convert.ToBase64String(imageBytes);
+                        UpdateImagePreview();
                     }
                     catch
                     {
-                        MessageBox.Show("Invalid image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("Error reading image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
+        }
+
+        private void BtnRemoveImage_Click(object? sender, EventArgs e)
+        {
+            PImageData = string.Empty;
+            UpdateImagePreview();
         }
 
         private void BtnSave_Click(object? sender, EventArgs e)
@@ -224,18 +246,9 @@ namespace FoodOrderingSystem.Forms
             PName = _txtName.Text; 
             PPrice = p; 
 
-            if (_cbCat.SelectedValue is int id) 
-            {
-                PCategoryId = id;
-            }
-            else if (_cbCat.SelectedValue != null && int.TryParse(_cbCat.SelectedValue.ToString(), out int parsedId)) 
-            {
-                PCategoryId = parsedId;
-            }
-            else 
-            {
-                PCategoryId = 0;
-            }
+            if (_cbCat.SelectedValue is int id) PCategoryId = id;
+            else if (_cbCat.SelectedValue != null && int.TryParse(_cbCat.SelectedValue.ToString(), out int parsedId)) PCategoryId = parsedId;
+            else PCategoryId = 0;
 
             PQuantity = (int)_numQty.Value; 
             DialogResult = DialogResult.OK;

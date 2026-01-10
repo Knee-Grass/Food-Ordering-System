@@ -19,7 +19,7 @@ namespace FoodOrderingSystem.Models
         public string Category { get; set; } = string.Empty; 
         public bool IsAvailable { get; set; } = true;
         public int Quantity { get; set; }
-        public string ImagePath { get; set; } = string.Empty; // NEW: Image Path Property
+        public string ImageData { get; set; } = string.Empty; // Fixed: Added ImageData
     }
 
     public class CartItem

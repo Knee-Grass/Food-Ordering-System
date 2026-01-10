@@ -16,7 +16,7 @@ namespace FoodOrderingSystem.Forms
         {
             _dbService = new DatabaseService();
             
-            this.Text = "Register - Gourmet System";
+            this.Text = "Register Customer - Gourmet System";
             this.Size = new Size(400, 550);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(40, 40, 40); // Dark theme
@@ -46,7 +46,7 @@ namespace FoodOrderingSystem.Forms
             // Title
             Label lblTitle = new Label
             {
-                Text = "CREATE\nACCOUNT",
+                Text = "CUSTOMER\nREGISTRATION",
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 24, FontStyle.Bold),
                 AutoSize = false,
@@ -132,11 +132,12 @@ namespace FoodOrderingSystem.Forms
             }
 
             // Calls the Database Service to insert the user
-            bool success = _dbService.RegisterUser(_txtUser.Text, _txtPass.Text);
+            // FIXED: Explicitly passing "Customer" role
+            bool success = _dbService.RegisterUser(_txtUser.Text, _txtPass.Text, "Customer");
             
             if (success)
             {
-                MessageBox.Show("Registration Successful! You can now login.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Customer Registration Successful! You can now login.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 new LoginForm().Show();
                 this.Close(); // Close register form properly
             }

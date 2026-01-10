@@ -4,8 +4,10 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using FoodOrderingSystem.Data; 
 using FoodOrderingSystem.Models; 
-using System.Linq; // Added for filtering
-using System.Text; // Added for StringBuilder
+using System.Linq; 
+using System.Text; 
+using System.IO; 
+using System.ComponentModel; // Added for Designer attributes
 
 namespace FoodOrderingSystem.Forms 
 {
@@ -14,16 +16,21 @@ namespace FoodOrderingSystem.Forms
         private readonly DatabaseService _dbService;
         private FlowLayoutPanel _previewPanel = null!; 
         
+        // Fix: Attributes added to prevent Designer serialization errors
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string CashierName { get; set; } = "Unknown"; 
+        
         public HistoryForm()
         {
             _dbService = new DatabaseService();
-            InitializeComponent();
+            InitializeUI(); 
         }
 
-        private void InitializeComponent()
+        private void InitializeUI()
         {
             this.Text = "Receipt Preview & Reports";
-            this.Size = new Size(450, 650);
+            this.Size = new Size(450, 700);
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = Color.White;
 
@@ -48,10 +55,10 @@ namespace FoodOrderingSystem.Forms
             // Print/Download Button (Icon Only)
             Button btnDownload = new Button
             {
-                Text = "🖨", // Icon only
-                Font = new Font("Segoe UI Emoji", 20), // Use Emoji font for better icon rendering
+                Text = "🖨 Print", 
+                Font = new Font("Segoe UI", 12, FontStyle.Bold), 
                 Dock = DockStyle.Right,
-                Width = 60, 
+                Width = 100, 
                 BackColor = Color.Teal,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -62,25 +69,11 @@ namespace FoodOrderingSystem.Forms
             tip.SetToolTip(btnDownload, "Print/Download Current Receipt");
             btnDownload.Click += (s, e) => DownloadReceipt();
 
-            // Monthly Report Button (With Text)
-            Button btnMonthly = new Button
-            {
-                Text = "📅 Print Monthly Record",
-                Dock = DockStyle.Left,
-                Width = 180, // Wider to fit text
-                BackColor = Color.Orange,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btnMonthly.Click += (s, e) => DownloadMonthlyReport();
-
             bottomPanel.Controls.Add(btnDownload);
-            bottomPanel.Controls.Add(btnMonthly);
             
-            this.Controls.Add(_previewPanel);
+            // Add bottomPanel FIRST so it claims the bottom space before _previewPanel fills the rest
             this.Controls.Add(bottomPanel);
+            this.Controls.Add(_previewPanel);
         }
 
         // Store current order details for downloading
@@ -92,7 +85,6 @@ namespace FoodOrderingSystem.Forms
         public async Task GenerateReceiptPreviewAsync(OrderRecord order) 
         {
             _currentOrderId = order.Id;
-            // Use a specific format that works well with Excel/CSV
             _currentDate = order.Date.ToString("yyyy-MM-dd HH:mm:ss");
             _currentTotal = order.Total.ToString("N2");
             _currentOrderDetails = order;
@@ -103,30 +95,65 @@ namespace FoodOrderingSystem.Forms
         public async Task GenerateReceiptPreviewAsync(int orderId, string? date, string? total) 
         {
             _currentOrderId = orderId;
-            // Ensure date is formatted if passed as null
             _currentDate = date ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             _currentTotal = total ?? "0.00";
 
             _previewPanel.Controls.Clear();
 
+            // HEADER
             Label lblHeader = new Label
             {
-                Text = "RECEIPT",
-                Font = new Font("Courier New", 16, FontStyle.Bold),
+                Text = "OFFICIAL RECEIPT",
+                Font = new Font("Courier New", 14, FontStyle.Bold),
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Margin = new Padding(0, 0, 0, 20)
+                Margin = new Padding(0, 0, 0, 10)
             };
             _previewPanel.Controls.Add(lblHeader);
 
-            Label lblDetails = new Label
+            // BIG BOLD BARCODE (ORDER ID) - Increased size as requested
+            Label lblBarcode = new Label
             {
-                Text = $"Order #{orderId}\n{_currentDate}",
-                Font = new Font("Courier New", 10),
+                Text = $"#{orderId}",
+                Font = new Font("Courier New", 36, FontStyle.Bold), 
                 AutoSize = true,
-                Margin = new Padding(0, 0, 0, 20)
+                TextAlign = ContentAlignment.MiddleCenter,
+                Margin = new Padding(0, 0, 0, 10),
+                ForeColor = Color.Black
             };
-            _previewPanel.Controls.Add(lblDetails);
+             // Center the barcode label in panel
+            Panel barcodeContainer = new Panel { Width = 380, Height = 60 };
+            lblBarcode.Dock = DockStyle.Fill;
+            barcodeContainer.Controls.Add(lblBarcode);
+            _previewPanel.Controls.Add(barcodeContainer);
+
+            // DATE
+            Label lblDate = new Label
+            {
+                Text = $"{_currentDate}",
+                Font = new Font("Courier New", 9),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 15)
+            };
+            _previewPanel.Controls.Add(lblDate);
+
+            // CUSTOMER & CASHIER INFO
+            string custName = _currentOrderDetails?.CustomerName ?? "Guest";
+            // Clean up Customer Name if it has code
+            if(custName.Contains("[Code:")) custName = custName.Split('[')[0].Trim();
+
+            Label lblPeople = new Label
+            {
+                Text = $"CASHIER : {CashierName}\nCUSTOMER: {custName}",
+                Font = new Font("Courier New", 10, FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 20),
+                ForeColor = Color.DarkSlateGray
+            };
+            _previewPanel.Controls.Add(lblPeople);
+
+            Label lblSep1 = new Label { Text = "--------------------------------", Font = new Font("Courier New", 12), AutoSize = true };
+            _previewPanel.Controls.Add(lblSep1);
 
             var order = await _dbService.GetOrderDetailsAsync(orderId);
             _currentOrderDetails = order; 
@@ -135,10 +162,10 @@ namespace FoodOrderingSystem.Forms
             {
                 foreach (var item in order.DetailedItems)
                 {
-                    Panel itemPanel = new Panel { Width = 340, Height = 25, Margin = new Padding(0) };
+                    Panel itemPanel = new Panel { Width = 360, Height = 25, Margin = new Padding(0) };
                     
                     Label name = new Label { Text = $"{item.Quantity}x {item.Name}", AutoSize = true, Location = new Point(0, 0), Font = new Font("Courier New", 9) };
-                    Label price = new Label { Text = $"{item.Total:N2}", AutoSize = true, Location = new Point(280, 0), Font = new Font("Courier New", 9) };
+                    Label price = new Label { Text = $"{item.Total:N2}", AutoSize = true, Location = new Point(300, 0), Font = new Font("Courier New", 9) };
 
                     itemPanel.Controls.Add(name);
                     itemPanel.Controls.Add(price);
@@ -153,10 +180,10 @@ namespace FoodOrderingSystem.Forms
 
             Label lblTotal = new Label
             {
-                Text = $"--------------------------------\nTOTAL: {_currentTotal}",
-                Font = new Font("Courier New", 12, FontStyle.Bold),
+                Text = $"--------------------------------\nTOTAL:     {_currentTotal}",
+                Font = new Font("Courier New", 14, FontStyle.Bold),
                 AutoSize = true,
-                Margin = new Padding(0, 20, 0, 0)
+                Margin = new Padding(0, 10, 0, 0)
             };
             _previewPanel.Controls.Add(lblTotal);
         }
@@ -167,7 +194,7 @@ namespace FoodOrderingSystem.Forms
 
             using (SaveFileDialog sfd = new SaveFileDialog())
             {
-                sfd.Filter = "Text File|*.txt|CSV File|*.csv";
+                sfd.Filter = "Text File|*.txt";
                 sfd.FileName = $"Receipt_{_currentOrderId}.txt";
                 
                 if (sfd.ShowDialog() == DialogResult.OK)
@@ -175,121 +202,35 @@ namespace FoodOrderingSystem.Forms
                     try
                     {
                         var sb = new StringBuilder();
-                        if (sfd.FilterIndex == 2) // CSV
+                        sb.AppendLine("          OFFICIAL RECEIPT");
+                        sb.AppendLine("--------------------------------");
+                        sb.AppendLine($"ORDER #: {_currentOrderId}"); 
+                        sb.AppendLine("--------------------------------");
+                        sb.AppendLine($"Date    : {_currentDate}");
+                        sb.AppendLine($"CASHIER : {CashierName}");
+                        
+                        string custName = _currentOrderDetails.CustomerName;
+                        if(custName.Contains("[Code:")) custName = custName.Split('[')[0].Trim();
+                        sb.AppendLine($"CUSTOMER: {custName}");
+                        
+                        sb.AppendLine("--------------------------------");
+                        foreach(var item in _currentOrderDetails.DetailedItems)
                         {
-                            sb.AppendLine("OrderId,Date,Item,Quantity,Price,Total");
-                            foreach(var item in _currentOrderDetails.DetailedItems)
-                            {
-                                // Enclose date in quotes or rely on yyyy-MM-dd format which Excel handles better
-                                // Adding a tab or single quote helps prevent Excel auto-formatting issues (like #####)
-                                string formattedDate = $"\t{_currentDate}"; 
-                                sb.AppendLine($"{_currentOrderId},{formattedDate},{item.Name},{item.Quantity},{item.Price},{item.Total}");
-                            }
+                            string line = $"{item.Quantity}x {item.Name}";
+                            if(line.Length > 20) line = line.Substring(0, 20);
+                            sb.AppendLine($"{line,-20} {item.Total,10:N2}");
                         }
-                        else // Text
-                        {
-                            sb.AppendLine("RECEIPT");
-                            sb.AppendLine($"Order #{_currentOrderId}");
-                            sb.AppendLine($"Date: {_currentDate}");
-                            sb.AppendLine("--------------------------------");
-                            foreach(var item in _currentOrderDetails.DetailedItems)
-                            {
-                                sb.AppendLine($"{item.Quantity}x {item.Name}".PadRight(20) + $"{item.Total:N2}".PadLeft(10));
-                            }
-                            sb.AppendLine("--------------------------------");
-                            sb.AppendLine($"TOTAL: {_currentTotal}");
-                        }
+                        sb.AppendLine("--------------------------------");
+                        sb.AppendLine($"TOTAL   :           {_currentTotal,10}");
+                        sb.AppendLine("--------------------------------");
+                        sb.AppendLine("      Thank you for dining!");
 
-                        System.IO.File.WriteAllText(sfd.FileName, sb.ToString());
+                        File.WriteAllText(sfd.FileName, sb.ToString());
                         MessageBox.Show("Receipt saved successfully!");
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show($"Error saving receipt: {ex.Message}");
-                    }
-                }
-            }
-        }
-
-        // New Module: Monthly Report Generation
-        private async void DownloadMonthlyReport()
-        {
-            // Simple Month Selector using standard InputBox logic (simulated with a small form)
-            using (Form prompt = new Form())
-            {
-                prompt.Width = 300;
-                prompt.Height = 180;
-                prompt.Text = "Select Month";
-                prompt.StartPosition = FormStartPosition.CenterParent;
-                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
-                prompt.MaximizeBox = false;
-                prompt.MinimizeBox = false;
-
-                Label textLabel = new Label() { Left = 20, Top = 20, Text = "Select month to export:" };
-                DateTimePicker dtp = new DateTimePicker() { Left = 20, Top = 50, Width = 240, Format = DateTimePickerFormat.Custom, CustomFormat = "MMMM yyyy" };
-                dtp.ShowUpDown = true; // Makes it easier to pick month/year without calendar popup
-                
-                Button confirmation = new Button() { Text = "Export", Left = 160, Width = 100, Top = 90, DialogResult = DialogResult.OK };
-                prompt.Controls.Add(textLabel);
-                prompt.Controls.Add(dtp);
-                prompt.Controls.Add(confirmation);
-                prompt.AcceptButton = confirmation;
-
-                if (prompt.ShowDialog() == DialogResult.OK)
-                {
-                    DateTime selectedMonth = dtp.Value;
-                    await GenerateMonthlyCSV(selectedMonth);
-                }
-            }
-        }
-
-        private async Task GenerateMonthlyCSV(DateTime month)
-        {
-            var allOrders = await _dbService.GetOrdersAsync();
-            var filteredOrders = allOrders.Where(o => o.Date.Month == month.Month && o.Date.Year == month.Year).ToList();
-
-            if (filteredOrders.Count == 0)
-            {
-                MessageBox.Show($"No records found for {month:MMMM yyyy}.", "No Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            using (SaveFileDialog sfd = new SaveFileDialog())
-            {
-                sfd.Filter = "CSV File|*.csv";
-                sfd.FileName = $"Monthly_Report_{month:yyyy_MM}.csv";
-
-                if (sfd.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        // Header
-                        sb.AppendLine($"Monthly Report for {month:MMMM yyyy}");
-                        sb.AppendLine("Order ID,Date,Customer,Total Amount,Status,Items Summary");
-
-                        decimal monthlyTotal = 0;
-
-                        foreach (var order in filteredOrders)
-                        {
-                            // Escape commas in Items string
-                            string safeItems = $"\"{order.Items.Replace("\"", "\"\"")}\"";
-                            // Format date explicitly for CSV to avoid ##### in Excel (using yyyy-MM-dd HH:mm)
-                            // Prepending a tab (\t) forces Excel to treat it as text, preventing ##### for column width issues
-                            string formattedDate = $"\t{order.Date.ToString("yyyy-MM-dd HH:mm")}"; 
-                            
-                            sb.AppendLine($"{order.Id},{formattedDate},{order.CustomerName},{order.Total},{order.Status},{safeItems}");
-                            monthlyTotal += order.Total;
-                        }
-
-                        sb.AppendLine($",,,Total Revenue:,{monthlyTotal},");
-
-                        System.IO.File.WriteAllText(sfd.FileName, sb.ToString());
-                        MessageBox.Show($"Report for {month:MMMM yyyy} saved successfully!\nTotal Orders: {filteredOrders.Count}\nTotal Revenue: {monthlyTotal:C2}");
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error saving report: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }

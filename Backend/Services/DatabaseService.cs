@@ -54,6 +54,20 @@ namespace FoodOrderingSystem.Data
             }
         }
 
+        public void UpdateCategory(int id, string name)
+        {
+            using (var conn = new NpgsqlConnection(_connectionString))
+            {
+                conn.Open();
+                using (var cmd = new NpgsqlCommand("UPDATE categories SET name=@n WHERE category_id=@id", conn))
+                {
+                    cmd.Parameters.AddWithValue("n", name);
+                    cmd.Parameters.AddWithValue("id", id);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
         public void DeleteCategory(int id)
         {
             using (var conn = new NpgsqlConnection(_connectionString))
@@ -76,9 +90,8 @@ namespace FoodOrderingSystem.Data
                 using (var conn = new NpgsqlConnection(_connectionString))
                 {
                     await conn.OpenAsync();
-                    // Fetch image_path
                     string sql = @"
-                        SELECT p.product_id, p.name, p.price, c.category_id, c.name, p.is_available, p.quantity, p.image_path 
+                        SELECT p.product_id, p.name, p.price, c.category_id, c.name, p.is_available, p.quantity, p.image_data 
                         FROM products p 
                         LEFT JOIN categories c ON p.category_id = c.category_id 
                         ORDER BY c.name, p.name";
@@ -97,7 +110,7 @@ namespace FoodOrderingSystem.Data
                                 Category = reader.IsDBNull(4) ? "Uncategorized" : reader.GetString(4),
                                 IsAvailable = reader.GetBoolean(5),
                                 Quantity = reader.GetInt32(6),
-                                ImagePath = reader.IsDBNull(7) ? string.Empty : reader.GetString(7) // Retrieve Image Path
+                                ImageData = reader.IsDBNull(7) ? string.Empty : reader.GetString(7)
                             });
                         }
                     }
@@ -110,31 +123,29 @@ namespace FoodOrderingSystem.Data
             return list;
         }
 
-        public void AddProduct(string name, decimal price, int categoryId, int quantity, string imagePath)
+        public void AddProduct(string name, decimal price, int categoryId, int quantity, string imageData)
         {
             using (var conn = new NpgsqlConnection(_connectionString))
             {
                 conn.Open();
-                // Insert image_path
-                using (var cmd = new NpgsqlCommand("INSERT INTO products (name, price, category_id, is_available, quantity, image_path) VALUES (@n, @p, @c, TRUE, @q, @img)", conn))
+                using (var cmd = new NpgsqlCommand("INSERT INTO products (name, price, category_id, is_available, quantity, image_data) VALUES (@n, @p, @c, TRUE, @q, @img)", conn))
                 {
                     cmd.Parameters.AddWithValue("n", name);
                     cmd.Parameters.AddWithValue("p", price);
                     cmd.Parameters.AddWithValue("c", categoryId);
                     cmd.Parameters.AddWithValue("q", quantity);
-                    cmd.Parameters.AddWithValue("img", imagePath ?? string.Empty);
+                    cmd.Parameters.AddWithValue("img", imageData ?? string.Empty);
                     cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        public void UpdateProduct(int id, string name, decimal price, int categoryId, int quantity, string imagePath)
+        public void UpdateProduct(int id, string name, decimal price, int categoryId, int quantity, string imageData)
         {
             using (var conn = new NpgsqlConnection(_connectionString))
             {
                 conn.Open();
-                // Update image_path
-                string sql = "UPDATE products SET name=@n, price=@p, category_id=@c, quantity=@q, image_path=@img, is_available = (CASE WHEN @q > 0 THEN TRUE ELSE FALSE END) WHERE product_id=@id";
+                string sql = "UPDATE products SET name=@n, price=@p, category_id=@c, quantity=@q, image_data=@img, is_available = (CASE WHEN @q > 0 THEN TRUE ELSE FALSE END) WHERE product_id=@id";
                 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
@@ -142,7 +153,7 @@ namespace FoodOrderingSystem.Data
                     cmd.Parameters.AddWithValue("p", price);
                     cmd.Parameters.AddWithValue("c", categoryId);
                     cmd.Parameters.AddWithValue("q", quantity);
-                    cmd.Parameters.AddWithValue("img", imagePath ?? string.Empty);
+                    cmd.Parameters.AddWithValue("img", imageData ?? string.Empty);
                     cmd.Parameters.AddWithValue("id", id);
                     cmd.ExecuteNonQuery();
                 }
@@ -192,7 +203,10 @@ namespace FoodOrderingSystem.Data
         }
 
         public bool CreateAdmin(string username, string password) => RegisterUserInternal(username, password, "Admin");
-        public bool RegisterUser(string username, string password) => RegisterUserInternal(username, password, "User");
+        public bool CreateCrew(string username, string password) => RegisterUserInternal(username, password, "Crew");
+        
+        // FIXED: Added optional 'role' parameter. Defaults to "User" (Cashier) if not specified, but allows "Customer".
+        public bool RegisterUser(string username, string password, string role = "User") => RegisterUserInternal(username, password, role);
 
         private bool RegisterUserInternal(string username, string password, string role)
         {
@@ -212,6 +226,22 @@ namespace FoodOrderingSystem.Data
                 return true;
             }
             catch (PostgresException ex) { if (ex.SqlState == "23505") return false; throw; }
+        }
+
+        public void UpdateUser(int userId, string username, string password = "")
+        {
+            using (var conn = new NpgsqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "UPDATE users SET username=@u" + (string.IsNullOrEmpty(password) ? "" : ", password=@p") + " WHERE user_id=@id";
+                using (var cmd = new NpgsqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("u", username);
+                    if(!string.IsNullOrEmpty(password)) cmd.Parameters.AddWithValue("p", password);
+                    cmd.Parameters.AddWithValue("id", userId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         public List<User> GetUsers()
@@ -258,6 +288,7 @@ namespace FoodOrderingSystem.Data
                 {
                     try
                     {
+                        // 1. Insert Order
                         string sqlOrder = "INSERT INTO orders (customer_name, total_amount, items_summary, status, order_date) VALUES (@cust, @total, @summ, 'Pending', NOW()) RETURNING order_id";
                         using (var cmd = new NpgsqlCommand(sqlOrder, conn, trans))
                         {
@@ -268,22 +299,13 @@ namespace FoodOrderingSystem.Data
                         }
 
                         string sqlItem = "INSERT INTO order_items (order_id, food_name, price_at_time, quantity) VALUES (@oid, @fname, @price, @qty)";
-                        string sqlDeduct = "UPDATE products SET quantity = quantity - @qty WHERE product_id = @pid AND quantity >= @qty";
-                        string sqlCheckZero = "UPDATE products SET is_available = FALSE WHERE product_id = @pid AND quantity <= 0";
+                        
+                        // 2. Insert Order Items AND Update Stock
+                        string sqlUpdateStock = "UPDATE products SET quantity = quantity - @qty, is_available = (CASE WHEN quantity - @qty > 0 THEN TRUE ELSE FALSE END) WHERE product_id = @pid";
 
                         foreach (var item in cartItems)
                         {
-                            using (var cmdDeduct = new NpgsqlCommand(sqlDeduct, conn, trans))
-                            {
-                                cmdDeduct.Parameters.AddWithValue("qty", item.Quantity);
-                                cmdDeduct.Parameters.AddWithValue("pid", item.Food.Id);
-                                if (await cmdDeduct.ExecuteNonQueryAsync() == 0) throw new Exception($"Insufficient stock for {item.Food.Name}");
-                            }
-                            using (var cmdZero = new NpgsqlCommand(sqlCheckZero, conn, trans))
-                            {
-                                cmdZero.Parameters.AddWithValue("pid", item.Food.Id);
-                                await cmdZero.ExecuteNonQueryAsync();
-                            }
+                            // Record Item
                             using (var cmdItem = new NpgsqlCommand(sqlItem, conn, trans))
                             {
                                 cmdItem.Parameters.AddWithValue("oid", newOrderId);
@@ -291,6 +313,14 @@ namespace FoodOrderingSystem.Data
                                 cmdItem.Parameters.AddWithValue("price", item.Food.Price);
                                 cmdItem.Parameters.AddWithValue("qty", item.Quantity);
                                 await cmdItem.ExecuteNonQueryAsync();
+                            }
+
+                            // Update Stock
+                            using (var cmdStock = new NpgsqlCommand(sqlUpdateStock, conn, trans))
+                            {
+                                cmdStock.Parameters.AddWithValue("qty", item.Quantity);
+                                cmdStock.Parameters.AddWithValue("pid", item.Food.Id);
+                                await cmdStock.ExecuteNonQueryAsync();
                             }
                         }
                         await trans.CommitAsync();
