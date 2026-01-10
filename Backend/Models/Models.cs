@@ -19,7 +19,7 @@ namespace FoodOrderingSystem.Models
         public string Category { get; set; } = string.Empty; 
         public bool IsAvailable { get; set; } = true;
         public int Quantity { get; set; }
-        public string ImageData { get; set; } = string.Empty; // Fixed: Added ImageData
+        public string ImageData { get; set; } = string.Empty; 
     }
 
     public class CartItem
@@ -54,5 +54,9 @@ namespace FoodOrderingSystem.Models
         public string Items { get; set; } = string.Empty; 
         public List<OrderItem> DetailedItems { get; set; } = new List<OrderItem>();
         public string Status { get; set; } = "Pending";
+
+        // New properties for Receipt
+        public string CashierName { get; set; } = "Unknown";
+        public string OrderCode { get; set; } = "";
     }
 }

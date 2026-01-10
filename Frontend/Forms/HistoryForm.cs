@@ -7,7 +7,7 @@ using FoodOrderingSystem.Models;
 using System.Linq; 
 using System.Text; 
 using System.IO; 
-using System.ComponentModel; // Added for Designer attributes
+using System.ComponentModel; 
 
 namespace FoodOrderingSystem.Forms 
 {
@@ -16,7 +16,6 @@ namespace FoodOrderingSystem.Forms
         private readonly DatabaseService _dbService;
         private FlowLayoutPanel _previewPanel = null!; 
         
-        // Fix: Attributes added to prevent Designer serialization errors
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string CashierName { get; set; } = "Unknown"; 
@@ -30,7 +29,8 @@ namespace FoodOrderingSystem.Forms
         private void InitializeUI()
         {
             this.Text = "Receipt Preview & Reports";
-            this.Size = new Size(450, 700);
+            this.Size = new Size(550, 850); 
+            this.WindowState = FormWindowState.Maximized; 
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = Color.White;
 
@@ -43,7 +43,6 @@ namespace FoodOrderingSystem.Forms
                 WrapContents = false
             };
 
-            // Bottom Panel for Actions
             Panel bottomPanel = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -52,31 +51,41 @@ namespace FoodOrderingSystem.Forms
                 BackColor = Color.WhiteSmoke
             };
 
-            // Print/Download Button (Icon Only)
-            Button btnDownload = new Button
+            Button btnDone = new Button
+            {
+                Text = "Done", 
+                Font = new Font("Segoe UI", 12, FontStyle.Bold), 
+                Dock = DockStyle.Right,
+                Width = 120, 
+                BackColor = Color.Gray, 
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            btnDone.Click += (s, e) => this.Close();
+
+            Button btnPrint = new Button
             {
                 Text = "🖨 Print", 
                 Font = new Font("Segoe UI", 12, FontStyle.Bold), 
-                Dock = DockStyle.Right,
-                Width = 100, 
+                Dock = DockStyle.Left, 
+                Width = 120, 
                 BackColor = Color.Teal,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter
             };
-            ToolTip tip = new ToolTip();
-            tip.SetToolTip(btnDownload, "Print/Download Current Receipt");
-            btnDownload.Click += (s, e) => DownloadReceipt();
+            btnPrint.Click += (s, e) => DownloadReceipt();
 
-            bottomPanel.Controls.Add(btnDownload);
+            bottomPanel.Controls.Add(btnDone);
+            bottomPanel.Controls.Add(btnPrint);
             
-            // Add bottomPanel FIRST so it claims the bottom space before _previewPanel fills the rest
             this.Controls.Add(bottomPanel);
             this.Controls.Add(_previewPanel);
         }
 
-        // Store current order details for downloading
         private int _currentOrderId;
         private string _currentDate = "";
         private string _currentTotal = "";
@@ -89,70 +98,91 @@ namespace FoodOrderingSystem.Forms
             _currentTotal = order.Total.ToString("N2");
             _currentOrderDetails = order;
 
-            await GenerateReceiptPreviewAsync(order.Id, _currentDate, _currentTotal);
+            string recordCashier = !string.IsNullOrEmpty(order.CashierName) ? order.CashierName : CashierName;
+
+            await GenerateReceiptPreviewAsync(order.Id, _currentDate, _currentTotal, recordCashier, order.OrderCode);
         }
 
-        public async Task GenerateReceiptPreviewAsync(int orderId, string? date, string? total) 
+        public async Task GenerateReceiptPreviewAsync(int orderId, string? date, string? total, string cashier, string orderCode) 
         {
             _currentOrderId = orderId;
             _currentDate = date ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             _currentTotal = total ?? "0.00";
+            
+            CashierName = cashier;
 
             _previewPanel.Controls.Clear();
 
-            // HEADER
             Label lblHeader = new Label
             {
                 Text = "OFFICIAL RECEIPT",
                 Font = new Font("Courier New", 14, FontStyle.Bold),
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Margin = new Padding(0, 0, 0, 10)
+                Margin = new Padding(0, 0, 0, 10),
+                Width = 480
             };
             _previewPanel.Controls.Add(lblHeader);
 
-            // BIG BOLD BARCODE (ORDER ID) - Increased size as requested
+            string displayCode = !string.IsNullOrEmpty(orderCode) ? orderCode : $"#{orderId}";
+            
+            // Legacy check
+            if (string.IsNullOrEmpty(orderCode) && _currentOrderDetails != null && _currentOrderDetails.CustomerName.Contains("[Code:"))
+            {
+                 int start = _currentOrderDetails.CustomerName.IndexOf("[Code:") + 6;
+                 int end = _currentOrderDetails.CustomerName.IndexOf("]");
+                 if (start > 0 && end > start)
+                 {
+                     displayCode = _currentOrderDetails.CustomerName.Substring(start, end - start).Trim();
+                 }
+            }
+
             Label lblBarcode = new Label
             {
-                Text = $"#{orderId}",
+                Text = displayCode,
                 Font = new Font("Courier New", 36, FontStyle.Bold), 
-                AutoSize = true,
+                AutoSize = true, 
+                MaximumSize = new Size(480, 0),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Margin = new Padding(0, 0, 0, 10),
+                Margin = new Padding(0, 0, 0, 20),
                 ForeColor = Color.Black
             };
-             // Center the barcode label in panel
-            Panel barcodeContainer = new Panel { Width = 380, Height = 60 };
-            lblBarcode.Dock = DockStyle.Fill;
-            barcodeContainer.Controls.Add(lblBarcode);
-            _previewPanel.Controls.Add(barcodeContainer);
+            _previewPanel.Controls.Add(lblBarcode);
 
-            // DATE
             Label lblDate = new Label
             {
                 Text = $"{_currentDate}",
-                Font = new Font("Courier New", 9),
+                Font = new Font("Courier New", 10),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 15)
             };
             _previewPanel.Controls.Add(lblDate);
 
-            // CUSTOMER & CASHIER INFO
+            // Updated Info Display
             string custName = _currentOrderDetails?.CustomerName ?? "Guest";
-            // Clean up Customer Name if it has code
+            // Clean name for display if it has legacy code
             if(custName.Contains("[Code:")) custName = custName.Split('[')[0].Trim();
 
-            Label lblPeople = new Label
+            // Cashier - Show ONLY if a real cashier is assigned (not "Self-Service" or empty)
+            if (!string.IsNullOrEmpty(cashier) && cashier != "Self-Service")
             {
-                Text = $"CASHIER : {CashierName}\nCUSTOMER: {custName}",
-                Font = new Font("Courier New", 10, FontStyle.Bold),
-                AutoSize = true,
-                Margin = new Padding(0, 0, 0, 20),
-                ForeColor = Color.DarkSlateGray
-            };
-            _previewPanel.Controls.Add(lblPeople);
+                Label lblCashierTitle = new Label { Text = "CASHIER:", Font = new Font("Courier New", 10, FontStyle.Bold), AutoSize = true };
+                _previewPanel.Controls.Add(lblCashierTitle);
+                Label lblCashierName = new Label { Text = cashier, Font = new Font("Courier New", 12), AutoSize = true, MaximumSize = new Size(480, 0), Margin = new Padding(0, 0, 0, 15) };
+                _previewPanel.Controls.Add(lblCashierName);
+            }
 
-            Label lblSep1 = new Label { Text = "--------------------------------", Font = new Font("Courier New", 12), AutoSize = true };
+            // Customer
+            Label lblCustomerTitle = new Label { Text = "CUSTOMER:", Font = new Font("Courier New", 10, FontStyle.Bold), AutoSize = true };
+            _previewPanel.Controls.Add(lblCustomerTitle);
+            Label lblCustomerName = new Label { Text = custName, Font = new Font("Courier New", 12), AutoSize = true, MaximumSize = new Size(480, 0), Margin = new Padding(0, 0, 0, 15) };
+            _previewPanel.Controls.Add(lblCustomerName);
+
+            // ID
+            Label lblOrderId = new Label { Text = $"ORDER #: {orderId}", Font = new Font("Courier New", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 0, 0, 20) };
+            _previewPanel.Controls.Add(lblOrderId);
+
+            Label lblSep1 = new Label { Text = "------------------------------------------", Font = new Font("Courier New", 12), AutoSize = true };
             _previewPanel.Controls.Add(lblSep1);
 
             var order = await _dbService.GetOrderDetailsAsync(orderId);
@@ -162,76 +192,94 @@ namespace FoodOrderingSystem.Forms
             {
                 foreach (var item in order.DetailedItems)
                 {
-                    Panel itemPanel = new Panel { Width = 360, Height = 25, Margin = new Padding(0) };
-                    
-                    Label name = new Label { Text = $"{item.Quantity}x {item.Name}", AutoSize = true, Location = new Point(0, 0), Font = new Font("Courier New", 9) };
-                    Label price = new Label { Text = $"{item.Total:N2}", AutoSize = true, Location = new Point(300, 0), Font = new Font("Courier New", 9) };
-
-                    itemPanel.Controls.Add(name);
-                    itemPanel.Controls.Add(price);
+                    Panel itemPanel = new Panel { Width = 480, Height = 25, Margin = new Padding(0) };
+                    Label name = new Label { Text = $"{item.Quantity}x {item.Name}", AutoSize = true, Location = new Point(0, 0), Font = new Font("Courier New", 10) };
+                    Label price = new Label { Text = $"{item.Total:N2}", AutoSize = true, Location = new Point(400, 0), Font = new Font("Courier New", 10) };
+                    itemPanel.Controls.Add(name); itemPanel.Controls.Add(price);
                     _previewPanel.Controls.Add(itemPanel);
                 }
-            }
-            else
-            {
-                 Label lblError = new Label { Text = "Order details not found.", ForeColor = Color.Red, AutoSize = true };
-                 _previewPanel.Controls.Add(lblError);
             }
 
             Label lblTotal = new Label
             {
-                Text = $"--------------------------------\nTOTAL:     {_currentTotal}",
-                Font = new Font("Courier New", 14, FontStyle.Bold),
+                Text = $"------------------------------------------\nTOTAL:     {_currentTotal}",
+                Font = new Font("Courier New", 16, FontStyle.Bold),
                 AutoSize = true,
                 Margin = new Padding(0, 10, 0, 0)
             };
             _previewPanel.Controls.Add(lblTotal);
+
+            // --- INSTRUCTION TEXT ---
+            // Show this instruction IF:
+            // 1. The CashierName is "Self-Service"
+            // 2. OR CashierName is null/empty (meaning it hasn't been picked up by a real cashier yet)
+            if (CashierName == "Self-Service" || string.IsNullOrEmpty(CashierName))
+            {
+                Label lblInstruct = new Label 
+                { 
+                    Text = "\n\n*** PLEASE HAND THIS RECEIPT ***\n*** TO THE CASHIER FOR PAYMENT ***\n", 
+                    Font = new Font("Courier New", 12, FontStyle.Bold), 
+                    ForeColor = Color.Red,
+                    AutoSize = true, 
+                    TextAlign = ContentAlignment.MiddleCenter 
+                };
+                _previewPanel.Controls.Add(lblInstruct);
+            }
         }
 
         private void DownloadReceipt()
         {
             if (_currentOrderDetails == null) return;
-
             using (SaveFileDialog sfd = new SaveFileDialog())
             {
                 sfd.Filter = "Text File|*.txt";
                 sfd.FileName = $"Receipt_{_currentOrderId}.txt";
-                
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
                     try
                     {
                         var sb = new StringBuilder();
-                        sb.AppendLine("          OFFICIAL RECEIPT");
-                        sb.AppendLine("--------------------------------");
-                        sb.AppendLine($"ORDER #: {_currentOrderId}"); 
-                        sb.AppendLine("--------------------------------");
-                        sb.AppendLine($"Date    : {_currentDate}");
-                        sb.AppendLine($"CASHIER : {CashierName}");
-                        
                         string custName = _currentOrderDetails.CustomerName;
                         if(custName.Contains("[Code:")) custName = custName.Split('[')[0].Trim();
-                        sb.AppendLine($"CUSTOMER: {custName}");
-                        
+
+                        string orderCode = !string.IsNullOrEmpty(_currentOrderDetails.OrderCode) ? _currentOrderDetails.OrderCode : "N/A";
+
+                        sb.AppendLine("          OFFICIAL RECEIPT");
                         sb.AppendLine("--------------------------------");
-                        foreach(var item in _currentOrderDetails.DetailedItems)
+                        sb.AppendLine($"CODE    : {orderCode}"); 
+                        sb.AppendLine($"ORDER # : {_currentOrderId}"); 
+                        sb.AppendLine("--------------------------------");
+                        sb.AppendLine($"Date    : {_currentDate}");
+                        sb.AppendLine("");
+
+                        // Logic for printing Cashier name in text file
+                        if (!string.IsNullOrEmpty(CashierName) && CashierName != "Self-Service")
                         {
-                            string line = $"{item.Quantity}x {item.Name}";
-                            if(line.Length > 20) line = line.Substring(0, 20);
-                            sb.AppendLine($"{line,-20} {item.Total,10:N2}");
+                            sb.AppendLine("CASHIER:");
+                            sb.AppendLine($"{CashierName}");
+                            sb.AppendLine("");
                         }
+
+                        sb.AppendLine("CUSTOMER:");
+                        sb.AppendLine($"{custName}");
+                        sb.AppendLine("--------------------------------");
+                        foreach(var item in _currentOrderDetails.DetailedItems) sb.AppendLine($"{item.Quantity}x {item.Name,-20} {item.Total,10:N2}");
                         sb.AppendLine("--------------------------------");
                         sb.AppendLine($"TOTAL   :           {_currentTotal,10}");
+                        
+                        // Add instructions to printed text file as well
+                        if (CashierName == "Self-Service" || string.IsNullOrEmpty(CashierName))
+                        {
+                            sb.AppendLine("");
+                            sb.AppendLine("*** PLEASE HAND THIS RECEIPT ***");
+                            sb.AppendLine("*** TO THE CASHIER FOR PAYMENT ***");
+                        }
+                        
                         sb.AppendLine("--------------------------------");
-                        sb.AppendLine("      Thank you for dining!");
-
                         File.WriteAllText(sfd.FileName, sb.ToString());
                         MessageBox.Show("Receipt saved successfully!");
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error saving receipt: {ex.Message}");
-                    }
+                    catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
                 }
             }
         }

@@ -205,7 +205,6 @@ namespace FoodOrderingSystem.Data
         public bool CreateAdmin(string username, string password) => RegisterUserInternal(username, password, "Admin");
         public bool CreateCrew(string username, string password) => RegisterUserInternal(username, password, "Crew");
         
-        // FIXED: Added optional 'role' parameter. Defaults to "User" (Cashier) if not specified, but allows "Customer".
         public bool RegisterUser(string username, string password, string role = "User") => RegisterUserInternal(username, password, role);
 
         private bool RegisterUserInternal(string username, string password, string role)
@@ -276,10 +275,13 @@ namespace FoodOrderingSystem.Data
         }
 
         // --- ORDER MANAGEMENT ---
-        public async Task<int> PlaceOrderAsync(List<CartItem> cartItems, decimal total, string customerName)
+        public async Task<int> PlaceOrderAsync(List<CartItem> cartItems, decimal total, string customerName, string cashierName, bool decreaseStock = true, string? existingOrderCode = null)
         {
             int newOrderId = 0;
             string itemsSummary = string.Join(", ", cartItems.Select(i => $"{i.Food.Name} x{i.Quantity}"));
+            
+            // If existing code is provided (e.g. from a loaded receipt), reuse it. Otherwise generate new.
+            string orderCode = existingOrderCode ?? Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper();
 
             using (var conn = new NpgsqlConnection(_connectionString))
             {
@@ -288,24 +290,23 @@ namespace FoodOrderingSystem.Data
                 {
                     try
                     {
-                        // 1. Insert Order
-                        string sqlOrder = "INSERT INTO orders (customer_name, total_amount, items_summary, status, order_date) VALUES (@cust, @total, @summ, 'Pending', NOW()) RETURNING order_id";
+                        string sqlOrder = "INSERT INTO orders (customer_name, cashier_name, total_amount, items_summary, status, order_date, order_code) VALUES (@cust, @cashier, @total, @summ, 'Pending', NOW(), @code) RETURNING order_id";
                         using (var cmd = new NpgsqlCommand(sqlOrder, conn, trans))
                         {
                             cmd.Parameters.AddWithValue("cust", customerName);
+                            cmd.Parameters.AddWithValue("cashier", cashierName);
                             cmd.Parameters.AddWithValue("total", total);
                             cmd.Parameters.AddWithValue("summ", itemsSummary);
+                            cmd.Parameters.AddWithValue("code", orderCode);
                             newOrderId = (int)(await cmd.ExecuteScalarAsync() ?? 0);
                         }
 
                         string sqlItem = "INSERT INTO order_items (order_id, food_name, price_at_time, quantity) VALUES (@oid, @fname, @price, @qty)";
                         
-                        // 2. Insert Order Items AND Update Stock
                         string sqlUpdateStock = "UPDATE products SET quantity = quantity - @qty, is_available = (CASE WHEN quantity - @qty > 0 THEN TRUE ELSE FALSE END) WHERE product_id = @pid";
 
                         foreach (var item in cartItems)
                         {
-                            // Record Item
                             using (var cmdItem = new NpgsqlCommand(sqlItem, conn, trans))
                             {
                                 cmdItem.Parameters.AddWithValue("oid", newOrderId);
@@ -315,12 +316,14 @@ namespace FoodOrderingSystem.Data
                                 await cmdItem.ExecuteNonQueryAsync();
                             }
 
-                            // Update Stock
-                            using (var cmdStock = new NpgsqlCommand(sqlUpdateStock, conn, trans))
+                            if (decreaseStock)
                             {
-                                cmdStock.Parameters.AddWithValue("qty", item.Quantity);
-                                cmdStock.Parameters.AddWithValue("pid", item.Food.Id);
-                                await cmdStock.ExecuteNonQueryAsync();
+                                using (var cmdStock = new NpgsqlCommand(sqlUpdateStock, conn, trans))
+                                {
+                                    cmdStock.Parameters.AddWithValue("qty", item.Quantity);
+                                    cmdStock.Parameters.AddWithValue("pid", item.Food.Id);
+                                    await cmdStock.ExecuteNonQueryAsync();
+                                }
                             }
                         }
                         await trans.CommitAsync();
@@ -331,18 +334,70 @@ namespace FoodOrderingSystem.Data
             return newOrderId;
         }
 
+        // Method to deduct stock based on an existing order's items
+        public async Task DeductStockForOrderAsync(int orderId)
+        {
+            using (var conn = new NpgsqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (var trans = await conn.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        // Get items associated with the order
+                        var items = new List<(string Name, int Qty)>();
+                        using(var cmdGet = new NpgsqlCommand("SELECT food_name, quantity FROM order_items WHERE order_id=@id", conn, trans))
+                        {
+                            cmdGet.Parameters.AddWithValue("id", orderId);
+                            using(var reader = await cmdGet.ExecuteReaderAsync())
+                            {
+                                while(await reader.ReadAsync())
+                                {
+                                    items.Add((reader.GetString(0), reader.GetInt32(1)));
+                                }
+                            }
+                        }
+
+                        // Update Product Stock based on name matching
+                        string sqlUpdate = "UPDATE products SET quantity = quantity - @qty, is_available = (CASE WHEN quantity - @qty > 0 THEN TRUE ELSE FALSE END) WHERE name = @name";
+                        foreach(var i in items)
+                        {
+                            using(var cmdUp = new NpgsqlCommand(sqlUpdate, conn, trans))
+                            {
+                                cmdUp.Parameters.AddWithValue("qty", i.Qty);
+                                cmdUp.Parameters.AddWithValue("name", i.Name.Trim()); 
+                                await cmdUp.ExecuteNonQueryAsync();
+                            }
+                        }
+                        await trans.CommitAsync();
+                    }
+                    catch { await trans.RollbackAsync(); throw; }
+                }
+            }
+        }
+
         public async Task<List<OrderRecord>> GetOrdersAsync()
         {
             var orders = new List<OrderRecord>();
             using (var conn = new NpgsqlConnection(_connectionString))
             {
                 await conn.OpenAsync();
-                using (var cmd = new NpgsqlCommand("SELECT order_id, order_date, customer_name, total_amount, items_summary, status FROM orders ORDER BY order_date DESC", conn))
+                using (var cmd = new NpgsqlCommand("SELECT order_id, order_date, customer_name, total_amount, items_summary, status, cashier_name, order_code FROM orders ORDER BY order_date DESC", conn))
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
                     {
-                        orders.Add(new OrderRecord { Id = reader.GetInt32(0), Date = reader.GetDateTime(1), CustomerName = reader.GetString(2), Total = reader.GetDecimal(3), Items = reader.GetString(4), Status = reader.GetString(5) });
+                        orders.Add(new OrderRecord 
+                        { 
+                            Id = reader.GetInt32(0), 
+                            Date = reader.GetDateTime(1), 
+                            CustomerName = reader.GetString(2), 
+                            Total = reader.GetDecimal(3), 
+                            Items = reader.GetString(4), 
+                            Status = reader.GetString(5),
+                            CashierName = reader.IsDBNull(6) ? "Unknown" : reader.GetString(6),
+                            OrderCode = reader.IsDBNull(7) ? "N/A" : reader.GetString(7)
+                        });
                     }
                 }
             }
@@ -355,13 +410,26 @@ namespace FoodOrderingSystem.Data
             using (var conn = new NpgsqlConnection(_connectionString))
             {
                 await conn.OpenAsync();
-                string sqlOrder = "SELECT order_id, order_date, customer_name, total_amount, items_summary, status FROM orders WHERE order_id = @id";
+                string sqlOrder = "SELECT order_id, order_date, customer_name, total_amount, items_summary, status, cashier_name, order_code FROM orders WHERE order_id = @id";
                 using (var cmd = new NpgsqlCommand(sqlOrder, conn))
                 {
                     cmd.Parameters.AddWithValue("id", orderId);
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        if (await reader.ReadAsync()) order = new OrderRecord { Id = reader.GetInt32(0), Date = reader.GetDateTime(1), CustomerName = reader.GetString(2), Total = reader.GetDecimal(3), Items = reader.GetString(4), Status = reader.GetString(5) };
+                        if (await reader.ReadAsync()) 
+                        {
+                            order = new OrderRecord 
+                            { 
+                                Id = reader.GetInt32(0), 
+                                Date = reader.GetDateTime(1), 
+                                CustomerName = reader.GetString(2), 
+                                Total = reader.GetDecimal(3), 
+                                Items = reader.GetString(4), 
+                                Status = reader.GetString(5),
+                                CashierName = reader.IsDBNull(6) ? "Unknown" : reader.GetString(6),
+                                OrderCode = reader.IsDBNull(7) ? "N/A" : reader.GetString(7)
+                            };
+                        }
                     }
                 }
                 if (order != null)
@@ -401,6 +469,21 @@ namespace FoodOrderingSystem.Data
                 using (var cmd = new NpgsqlCommand("UPDATE orders SET status=@s WHERE order_id=@id", conn))
                 {
                     cmd.Parameters.AddWithValue("s", newStatus);
+                    cmd.Parameters.AddWithValue("id", orderId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        // --- NEW METHOD: Update Cashier Name ---
+        public async Task UpdateOrderCashierAsync(int orderId, string cashierName)
+        {
+            using (var conn = new NpgsqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (var cmd = new NpgsqlCommand("UPDATE orders SET cashier_name=@c WHERE order_id=@id", conn))
+                {
+                    cmd.Parameters.AddWithValue("c", cashierName);
                     cmd.Parameters.AddWithValue("id", orderId);
                     await cmd.ExecuteNonQueryAsync();
                 }
