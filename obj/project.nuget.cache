@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "x00OCMhqEmE=",
+  "dgSpecHash": "uES9hO0u2wE=",
   "success": true,
-  "projectFilePath": "C:\\xampp\\htdocs\\foodhub\\FoodOrderingApp.csproj",
+  "projectFilePath": "C:\\Users\\RAVEN\\OneDrive\\Desktop\\VSCode\\FoodHub 2.0\\FoodOrderingApp.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Billy Godoy\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
-    "C:\\Users\\Billy Godoy\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
-    "C:\\Users\\Billy Godoy\\.nuget\\packages\\npgsql\\10.0.0\\npgsql.10.0.0.nupkg.sha512"
+    "C:\\Users\\RAVEN\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\RAVEN\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\RAVEN\\.nuget\\packages\\npgsql\\10.0.0\\npgsql.10.0.0.nupkg.sha512"
   ],
   "logs": []
 }

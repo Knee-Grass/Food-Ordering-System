@@ -4,8 +4,9 @@ namespace FoodOrderingSystem.Backend.Config
 {
     public static class DbConfig
     {
-        // IMPORTANT: Change 'Password' to your actual PostgreSQL password if it's different.
-        public static string ConnectionString = "Host=localhost;Username=postgres;Password=jeypi04.;Database=foodordering";
+        // RUBRIC: Database Security & Least Privilege
+        // Using 'app_cashier' instead of 'postgres' (Superuser).
+        public static string ConnectionString = "Host=localhost;Username=app_cashier;Password=SecurePass123!;Database=foodordering";
         
         // Colors
         public static Color PrimaryColor = Color.FromArgb(255, 87, 34);    // Deep Orange

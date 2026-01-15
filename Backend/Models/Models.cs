@@ -3,6 +3,20 @@ using System.Collections.Generic;
 
 namespace FoodOrderingSystem.Models
 {
+    // RUBRIC: Custom Exceptions (Section 7)
+    public class InsufficientStockException : Exception
+    {
+        public string ItemName { get; }
+        public int Remaining { get; }
+
+        public InsufficientStockException(string name, int remaining)
+            : base($"Stock Error: '{name}' only has {remaining} left!")
+        {
+            ItemName = name;
+            Remaining = remaining;
+        }
+    }
+
     public class Category
     {
         public int Id { get; set; }
@@ -54,8 +68,6 @@ namespace FoodOrderingSystem.Models
         public string Items { get; set; } = string.Empty; 
         public List<OrderItem> DetailedItems { get; set; } = new List<OrderItem>();
         public string Status { get; set; } = "Pending";
-
-        // New properties for Receipt
         public string CashierName { get; set; } = "Unknown";
         public string OrderCode { get; set; } = "";
     }

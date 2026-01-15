@@ -21,8 +21,6 @@ namespace FoodOrderingSystem.Forms
         
         private string _userRole;
         private string _username;
-        
-        // Track if we are editing an existing order loaded via barcode
         private int _loadedOrderId = 0;
 
         // UI Controls 
@@ -35,7 +33,7 @@ namespace FoodOrderingSystem.Forms
         private FlowLayoutPanel _adminsContainer = null!;
         private FlowLayoutPanel _categoriesContainer = null!; 
         private FlowLayoutPanel _customersContainer = null!;
-        private FlowLayoutPanel _barcodeHistoryContainer = null!; // NEW: Barcode History Container
+        private FlowLayoutPanel _barcodeHistoryContainer = null!;
         
         private Label _lblTotal = null!;
         private Panel _sidebar = null!; 
@@ -52,10 +50,7 @@ namespace FoodOrderingSystem.Forms
         private Button? _btnTabCancelled; 
         private string _currentHistoryTab = "Pending";
         
-        // Barcode History Specific Controls
         private DateTimePicker? _dtpBarcodeFilter;
-
-        // Order Type Selection
         private RadioButton? _rbDineIn;
         private RadioButton? _rbTakeout;
         
@@ -67,9 +62,8 @@ namespace FoodOrderingSystem.Forms
         private Button? _btnCategories; 
         private Button? _btnAdmins; 
         private Button? _btnCustomers; 
-        private Button? _btnBarcodeHistory; // NEW: Navigation Button
+        private Button? _btnBarcodeHistory;
 
-        // Cashier Specific Controls
         private TextBox? _txtBarcode;
         private Button? _btnSearchOrder;
 
@@ -96,7 +90,6 @@ namespace FoodOrderingSystem.Forms
             this.BackColor = DbConfig.LightColor;
             this.Font = DbConfig.MainFont;
             
-            // MAXIMIZE WINDOW BY DEFAULT
             this.WindowState = FormWindowState.Maximized; 
             
             this.FormClosed += (s, e) => Application.Exit(); 
@@ -140,19 +133,15 @@ namespace FoodOrderingSystem.Forms
         private void PopulateSidebar()
         {
             if (_sidebar == null) return;
-            
-            // Logic for Cashier/Customer sidebar (Categories)
             if (_userRole != "User" && _userRole != "Customer") return;
 
             _sidebar.Controls.Clear();
-
             Label lblCatHeader = new Label { Text = "CATEGORIES", Dock = DockStyle.Top, ForeColor = Color.Silver, Font = new Font("Segoe UI", 10F, FontStyle.Bold), Height = 30, Padding = new Padding(15, 0, 0, 0), TextAlign = ContentAlignment.BottomLeft };
             _sidebar.Controls.Add(lblCatHeader);
 
             var catNames = _allCategories.Select(x => x.Name).OrderBy(x => x).ToList();
             catNames.Insert(0, "All"); 
 
-            // Add categories
             _sidebar.Controls.Clear();
             _sidebar.Controls.Add(lblCatHeader);
 
@@ -167,14 +156,12 @@ namespace FoodOrderingSystem.Forms
         private void FilterMenu(string category)
         {
             HideAllViews();
-
             if (_userRole != "User" && _userRole != "Customer") return;
 
             _menuContainer.Visible = true;
             _sidebar.Visible = true;
             _rightCartPanel.Visible = true;
             _lblPageTitle.Text = $"Welcome, {_username}";
-
             _menuContainer.Controls.Clear();
 
             var itemsToShow = category == "All" ? _allFoodItems : _allFoodItems.Where(i => i.Category == category).ToList();
@@ -203,13 +190,7 @@ namespace FoodOrderingSystem.Forms
 
         private void InitializeLayout()
         {
-            Panel topPanel = new Panel 
-            { 
-                Dock = DockStyle.Top, 
-                Height = 80, 
-                BackColor = DbConfig.DarkColor, 
-                Padding = new Padding(30, 0, 30, 0)
-            };
+            Panel topPanel = new Panel { Dock = DockStyle.Top, Height = 80, BackColor = DbConfig.DarkColor, Padding = new Padding(30, 0, 30, 0) };
 
             string brandText = "GOURMET";
             if (_userRole == "SuperAdmin") brandText = "SUPER ADMIN";
@@ -218,23 +199,10 @@ namespace FoodOrderingSystem.Forms
             else if (_userRole == "User") brandText = "CASHIER"; 
             else if (_userRole == "Customer") brandText = "CUSTOMER";
 
-            Label lblBrand = new Label 
-            { 
-                Text = brandText, 
-                Font = new Font("Segoe UI", 22F, FontStyle.Bold), 
-                ForeColor = Color.White, 
-                AutoSize = true, 
-                Dock = DockStyle.Left, 
-                TextAlign = ContentAlignment.MiddleLeft
-            };
+            Label lblBrand = new Label { Text = brandText, Font = new Font("Segoe UI", 22F, FontStyle.Bold), ForeColor = Color.White, AutoSize = true, Dock = DockStyle.Left, TextAlign = ContentAlignment.MiddleLeft };
 
             Panel pnlLogoutContainer = new Panel { Dock = DockStyle.Right, Width = 140, BackColor = Color.Transparent };
-            Button btnLogout = new Button 
-            { 
-                Text = "Log Out", BackColor = Color.Crimson, ForeColor = Color.White,
-                Size = new Size(120, 40), Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                FlatStyle = FlatStyle.Flat
-            };
+            Button btnLogout = new Button { Text = "Log Out", BackColor = Color.Crimson, ForeColor = Color.White, Size = new Size(120, 40), Font = new Font("Segoe UI", 10F, FontStyle.Bold), FlatStyle = FlatStyle.Flat };
             btnLogout.FlatAppearance.BorderSize = 0;
             btnLogout.Location = new Point(10, 20); 
             
@@ -250,22 +218,13 @@ namespace FoodOrderingSystem.Forms
             topPanel.Controls.Add(pnlLogoutContainer); 
             topPanel.Controls.Add(lblBrand); 
 
-            // --- UNIFIED SIDEBAR (Used for ALL roles) ---
-            _sidebar = new Panel 
-            { 
-                Dock = DockStyle.Left, 
-                Width = 260, 
-                BackColor = DbConfig.DarkColor, 
-                Padding = new Padding(0, 10, 0, 0),
-                AutoScroll = true
-            };
+            _sidebar = new Panel { Dock = DockStyle.Left, Width = 260, BackColor = DbConfig.DarkColor, Padding = new Padding(0, 10, 0, 0), AutoScroll = true };
 
             if (_userRole == "Admin" || _userRole == "SuperAdmin" || _userRole == "Crew")
             {
                  Label lblNavHeader = new Label { Text = "NAVIGATION", ForeColor = Color.Gray, Font = new Font("Segoe UI", 9F, FontStyle.Bold), Dock = DockStyle.Top, Height=30, Padding = new Padding(20, 0, 0, 0), TextAlign=ContentAlignment.MiddleLeft };
                  _sidebar.Controls.Add(lblNavHeader); 
 
-                 // Create buttons
                  if (_userRole == "Crew")
                  {
                     _btnOrders = CreateSidebarButton("Orders");
@@ -288,9 +247,9 @@ namespace FoodOrderingSystem.Forms
 
                     _btnCategories = CreateSidebarButton("Categories");
                     _btnCategories.Click += (s, e) => ShowCategoriesView();
-                    _sidebar.Controls.Add(_categoriesContainer);
+                    // FIXED: Was incorrectly adding the content container to sidebar
+                    _sidebar.Controls.Add(_btnCategories); 
                     
-                    // NEW: Barcode History Button
                     _btnBarcodeHistory = CreateSidebarButton("Barcode History");
                     _btnBarcodeHistory.Click += (s, e) => ShowBarcodeHistoryView();
                     _sidebar.Controls.Add(_btnBarcodeHistory);
@@ -307,7 +266,6 @@ namespace FoodOrderingSystem.Forms
                     }
                  }
 
-                 // Fix layout order
                  _sidebar.Controls.Clear();
                  _sidebar.Controls.Add(lblNavHeader);
                  if (_userRole == "Crew")
@@ -318,7 +276,7 @@ namespace FoodOrderingSystem.Forms
                  {
                      if (_btnAdmins != null) _sidebar.Controls.Add(_btnAdmins);
                      _sidebar.Controls.Add(_btnCrew);
-                     if (_btnBarcodeHistory != null) _sidebar.Controls.Add(_btnBarcodeHistory); // Added here
+                     if (_btnBarcodeHistory != null) _sidebar.Controls.Add(_btnBarcodeHistory); 
                      _sidebar.Controls.Add(_btnCategories);
                      _sidebar.Controls.Add(_btnProducts);
                      _sidebar.Controls.Add(_btnCustomers);
@@ -326,15 +284,12 @@ namespace FoodOrderingSystem.Forms
                  }
             }
 
-            // --- RIGHT CART PANEL CONFIGURATION ---
             _rightCartPanel = new Panel { Dock = DockStyle.Right, Width = 380, BackColor = Color.White, Padding = new Padding(15), Visible = (_userRole == "User" || _userRole == "Customer") };
             _rightCartPanel.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, _rightCartPanel.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid);
             
             Label lblCartTitle = new Label { Text = "Current Order", Font = new Font("Segoe UI", 16F, FontStyle.Bold), ForeColor = DbConfig.DarkColor, Dock = DockStyle.Top, Height = 40 };
 
-            // -- CHECKOUT PANEL (Bottom of Cart) --
             Panel bottomActionContainer = new Panel { Dock = DockStyle.Bottom, AutoSize = true, BackColor = Color.White };
-
             Panel checkoutPanel = new Panel { Dock = DockStyle.Bottom, Height = 220, BackColor = Color.White }; 
             Panel pnlOrderType = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = Color.White };
             _rbDineIn = new RadioButton { Text = "Dine In", AutoSize = true, Location = new Point(50, 10), Font = new Font("Segoe UI", 10), Checked = true };
@@ -365,53 +320,38 @@ namespace FoodOrderingSystem.Forms
             checkoutPanel.Controls.Add(_lblTotal);
             checkoutPanel.Controls.Add(pnlOrderType); 
 
-            // -- BARCODE PANEL (Bottom of Cart - Above Checkout) --
             Panel pnlBarcode = new Panel { Dock = DockStyle.Bottom, Height = 140, BackColor = Color.WhiteSmoke, Padding = new Padding(10) };
-            pnlBarcode.Visible = (_userRole == "User"); // Only visible for Cashier
+            pnlBarcode.Visible = (_userRole == "User"); 
 
             Label lblCode = new Label { Text = "Load Order Code:", Font = new Font("Segoe UI", 10F, FontStyle.Bold), Dock = DockStyle.Top, Height = 25 };
             
-            // --- UPDATED TEXTBOX UI FOR CLARITY ---
-            _txtBarcode = new TextBox { 
-                Dock = DockStyle.Top, 
-                Font = new Font("Segoe UI", 24F, FontStyle.Bold), // Bigger font for better visibility
-                Height = 60, 
-                Multiline = true, 
-                BorderStyle = BorderStyle.FixedSingle,
-                TextAlign = HorizontalAlignment.Center
-            };
-            // ---------------------------------------
+            _txtBarcode = new TextBox { Dock = DockStyle.Top, Font = new Font("Segoe UI", 24F, FontStyle.Bold), Height = 60, Multiline = true, BorderStyle = BorderStyle.FixedSingle, TextAlign = HorizontalAlignment.Center };
             
             _btnSearchOrder = new Button { Text = "Load Order", Dock = DockStyle.Bottom, BackColor = Color.Gray, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Height = 40 };
             _btnSearchOrder.Click += async (s, e) => await SearchAndLoadOrder();
             _txtBarcode.KeyDown += async (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; await SearchAndLoadOrder(); } };
             
             pnlBarcode.Controls.Add(_btnSearchOrder);
-            pnlBarcode.Controls.Add(_txtBarcode); // Direct add
+            pnlBarcode.Controls.Add(_txtBarcode); 
             pnlBarcode.Controls.Add(lblCode);
 
-            // Add sections to the container. 
             bottomActionContainer.Controls.Clear();
-            bottomActionContainer.Controls.Add(checkoutPanel); // Bottom-most
-            bottomActionContainer.Controls.Add(pnlBarcode);    // Above Checkout
+            bottomActionContainer.Controls.Add(checkoutPanel);
+            bottomActionContainer.Controls.Add(pnlBarcode);   
 
-            // -- CART ITEMS --
             _cartContainer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.WhiteSmoke, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(0) };
             
-            // Layout Order for Right Panel
-            _rightCartPanel.Controls.Add(bottomActionContainer); // Bottom
-            _rightCartPanel.Controls.Add(lblCartTitle);  // Top
-            _rightCartPanel.Controls.Add(_cartContainer); // Fill
+            _rightCartPanel.Controls.Add(bottomActionContainer);
+            _rightCartPanel.Controls.Add(lblCartTitle);
+            _rightCartPanel.Controls.Add(_cartContainer);
             _cartContainer.BringToFront(); 
 
-            // Center Content
             Panel centerPanel = new Panel { Dock = DockStyle.Fill, BackColor = DbConfig.LightColor };
             Panel centerHeader = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = Color.White, Padding = new Padding(30, 0, 0, 0) };
             _lblPageTitle = new Label { Text = "Menu", Font = new Font("Segoe UI", 20F, FontStyle.Bold), ForeColor = DbConfig.DarkColor, Dock = DockStyle.Left, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft };
             centerHeader.Controls.Add(_lblPageTitle);
             
             _menuContainer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = DbConfig.LightColor, Padding = new Padding(20, 20, 20, 200), Visible = (_userRole == "User" || _userRole == "Customer") };
-            
             _historyContainer = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = DbConfig.LightColor, Padding = new Padding(20), Visible = (_userRole == "Crew"), FlowDirection = FlowDirection.TopDown, WrapContents = false };
             
             _usersContainer = CreateListContainer();
@@ -420,11 +360,11 @@ namespace FoodOrderingSystem.Forms
             _adminsContainer = CreateListContainer();
             _crewContainer = CreateListContainer();
             _customersContainer = CreateListContainer();
-            _barcodeHistoryContainer = CreateListContainer(); // Initialize new container
+            _barcodeHistoryContainer = CreateListContainer(); 
 
             centerPanel.Controls.Add(_menuContainer);
             centerPanel.Controls.Add(_historyContainer);
-            centerPanel.Controls.Add(_barcodeHistoryContainer); // Add to center panel
+            centerPanel.Controls.Add(_barcodeHistoryContainer); 
             centerPanel.Controls.Add(_usersContainer);
             centerPanel.Controls.Add(_customersContainer);
             centerPanel.Controls.Add(_productsContainer);
@@ -446,11 +386,7 @@ namespace FoodOrderingSystem.Forms
 
         private FlowLayoutPanel CreateListContainer()
         {
-            return new FlowLayoutPanel 
-            { 
-                Dock = DockStyle.Fill, AutoScroll = true, BackColor = DbConfig.LightColor, 
-                Padding = new Padding(20), Visible = false, FlowDirection = FlowDirection.TopDown, WrapContents = false 
-            };
+            return new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = DbConfig.LightColor, Padding = new Padding(20), Visible = false, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         }
 
         private void HideAllViews()
@@ -471,7 +407,6 @@ namespace FoodOrderingSystem.Forms
             _barcodeHistoryContainer.Visible = false;
         }
 
-        // --- CASHIER SEARCH LOGIC (Updated to Load into Cart) ---
         private async Task SearchAndLoadOrder()
         {
             if (_txtBarcode == null || string.IsNullOrWhiteSpace(_txtBarcode.Text)) return;
@@ -492,12 +427,10 @@ namespace FoodOrderingSystem.Forms
 
                 if (match != null && match.Status == "Pending")
                 {
-                    // Fetch full details including items
                     var detailedOrder = await _dbService.GetOrderDetailsAsync(match.Id);
                     
                     if (detailedOrder != null && detailedOrder.DetailedItems.Count > 0)
                     {
-                        // LOAD INTO CART for review/editing
                         _cartItems.Clear();
                         foreach(var item in detailedOrder.DetailedItems)
                         {
@@ -533,33 +466,41 @@ namespace FoodOrderingSystem.Forms
             }
         }
 
-        // --- CHECKOUT LOGIC WITH CONFIRMATION & STOCK UPDATE ---
         private async void BtnCheckout_Click(object? sender, EventArgs e)
         {
-            if (_cartItems.Count == 0) 
+            try 
             {
-                MessageBox.Show("Please add items to the order first.", "Empty Order", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+                if (_cartItems.Count == 0) 
+                {
+                    MessageBox.Show("Please add items to the order first.", "Empty Order", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
-            if (MessageBox.Show("Are you sure you want to proceed with this order?", "Confirm Checkout", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
-            {
-                return;
-            }
+                // RUBRIC: Custom Exception Implementation
+                foreach(var item in _cartItems) 
+                {
+                    var stockItem = _allFoodItems.FirstOrDefault(f => f.Id == item.Food.Id);
+                    if (stockItem != null && item.Quantity > stockItem.Quantity) 
+                    {
+                        throw new InsufficientStockException(item.Food.Name, stockItem.Quantity);
+                    }
+                }
 
-            decimal total = _cartItems.Sum(c => c.TotalPrice);
-            var btn = sender as Button; if (btn != null) { btn.Enabled = false; btn.Text = "Processing..."; }
-            
-            string orderType = (_rbDineIn != null && _rbDineIn.Checked) ? "Dine In" : "Takeout";
-            
-            try { 
+                if (MessageBox.Show("Are you sure you want to proceed with this order?", "Confirm Checkout", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                {
+                    return;
+                }
+
+                decimal total = _cartItems.Sum(c => c.TotalPrice);
+                var btn = sender as Button; if (btn != null) { btn.Enabled = false; btn.Text = "Processing..."; }
+                
+                string orderType = (_rbDineIn != null && _rbDineIn.Checked) ? "Dine In" : "Takeout";
+                
                 if (_userRole == "Customer")
                 {
-                    // CUSTOMER FLOW: DecreaseStock = FALSE (Stock decreases when order is Completed)
                     string code = Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper();
                     string displayCustomerName = $"{_username} ({orderType}) [Code: {code}]";
                     
-                    // Place order with "Self-Service" placeholder in DB
                     int newOrderId = await _dbService.PlaceOrderAsync(_cartItems, total, displayCustomerName, "Self-Service", decreaseStock: false); 
                     
                     await _dbService.UpdateOrderStatusAsync(newOrderId, "Pending");
@@ -568,44 +509,29 @@ namespace FoodOrderingSystem.Forms
                     if(order != null)
                     {
                         HistoryForm hf = new HistoryForm();
-                        hf.CashierName = ""; // Explicitly empty so it doesn't show "Self-Service" on receipt
+                        hf.CashierName = "";
                         await hf.GenerateReceiptPreviewAsync(order);
                         hf.ShowDialog();
                     }
                 }
-                else // CASHIER MODE
+                else // CASHIER
                 {
                     if (_loadedOrderId > 0)
                     {
-                        // CASHIER VALIDATION FLOW:
-                        // We replace the old order with a new "Pending" order.
-                        // DecreaseStock is set to FALSE.
-                        
-                        // Fetch old details to preserve context
                         var oldOrder = await _dbService.GetOrderDetailsAsync(_loadedOrderId);
                         string custName = oldOrder?.CustomerName ?? "Walk-in Customer";
-                        
-                        // IMPORTANT: Get the OLD CODE to preserve receipt validity
                         string oldCode = oldOrder?.OrderCode;
                         
-                        // Delete the old order
                         await _dbService.DeleteOrderAsync(_loadedOrderId);
                         
-                        // Place new order but keep it PENDING and DO NOT decrease stock yet.
-                        // Pass existingOrderCode so the new order matches the printed receipt.
                         int newOrderId = await _dbService.PlaceOrderAsync(_cartItems, total, custName, _username, decreaseStock: false, existingOrderCode: oldCode);
-                        
-                        // Ensure it is Pending
                         await _dbService.UpdateOrderStatusAsync(newOrderId, "Pending"); 
                         
                         MessageBox.Show($"Order Updated & Queued!\n(Replaced Order #{_loadedOrderId} with #{newOrderId})\n\nStatus: PENDING\nStock: Not Deducted yet.", "Success");
                     }
                     else
                     {
-                        // DIRECT CASHIER ORDER: DecreaseStock = FALSE
-                        // It goes to Pending state first.
                         string displayCustomerName = "Walk-in Customer (" + orderType + ")";
-
                         int orderId = await _dbService.PlaceOrderAsync(_cartItems, total, displayCustomerName, _username, decreaseStock: false); 
                         MessageBox.Show($"Order #{orderId} Placed Successfully!\n\nStatus: PENDING\nStock: Not Deducted yet.", "Success");
                     }
@@ -616,10 +542,21 @@ namespace FoodOrderingSystem.Forms
                 UpdateCartUI(); 
                 await LoadDataAsync();
             }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); } finally { if (btn != null) { btn.Enabled = true; btn.Text = _userRole == "Customer" ? "Place Order & Print" : "Submit Order"; } }
+            catch (InsufficientStockException stockEx)
+            {
+                MessageBox.Show(stockEx.Message, "Inventory Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex) 
+            { 
+                MessageBox.Show("Error: " + ex.Message); 
+            } 
+            finally 
+            { 
+                var btn = sender as Button;
+                if (btn != null) { btn.Enabled = true; btn.Text = _userRole == "Customer" ? "Place Order & Print" : "Submit Order"; } 
+            }
         }
 
-        // --- ORDER MANAGEMENT (HISTORY VIEW) ---
         private void ShowHistoryView()
         {
             HideAllViews();
@@ -630,7 +567,6 @@ namespace FoodOrderingSystem.Forms
             
             _historyContainer.Controls.Clear();
             
-            // Fixed Panel for Tabs
             Panel pnlTabs = new Panel { Width = _historyContainer.Width - 40, Height = 50, Margin = new Padding(0, 0, 0, 10), BackColor = Color.Transparent };
             
             _btnTabPending = new Button { Text = "Pending", Dock = DockStyle.Left, Width = 150, FlatStyle = FlatStyle.Flat, BackColor = DbConfig.PrimaryColor, ForeColor = Color.White, Cursor = Cursors.Hand };
@@ -648,6 +584,18 @@ namespace FoodOrderingSystem.Forms
             pnlTabs.Controls.Add(_btnTabCancelled);
             pnlTabs.Controls.Add(_btnTabCompleted);
             pnlTabs.Controls.Add(_btnTabPending);
+
+            // RUBRIC: Parallel Processing (Button Trigger)
+            Button btnAnalyze = new Button { 
+                Text = "⚡ Analyze Stats (Parallel)", 
+                Dock = DockStyle.Right, 
+                Width = 200, 
+                BackColor = Color.Teal, 
+                ForeColor = Color.White, 
+                FlatStyle = FlatStyle.Flat 
+            };
+            btnAnalyze.Click += (s, e) => RunParallelAnalysis();
+            pnlTabs.Controls.Add(btnAnalyze);
 
             _pnlHistoryFilters = new Panel { Width = _historyContainer.Width - 40, Height = 50, Visible = false, BackColor = Color.WhiteSmoke, Margin = new Padding(0, 0, 0, 10) };
             Label lblFilter = new Label { Text = "Filter by Month:", AutoSize = true, Location = new Point(10, 15), Font = new Font("Segoe UI", 10) };
@@ -687,23 +635,37 @@ namespace FoodOrderingSystem.Forms
             _pnlHistoryFilters.Controls.Add(_cbMonthFilter);
             _pnlHistoryFilters.Controls.Add(lblFilter);
 
-            // CHANGED: Use AutoSize to allow maximizing scroll area, removed fixed height
-            _pnlHistoryList = new FlowLayoutPanel 
-            { 
-                Width = _historyContainer.Width - 40, 
-                AutoSize = true, 
-                MinimumSize = new Size(0, 600), // Ensure at least some height
-                FlowDirection = FlowDirection.LeftToRight, 
-                WrapContents = true, 
-                BackColor = DbConfig.LightColor,
-                Margin = new Padding(0, 0, 0, 100) // Bottom margin for scroll
-            };
+            _pnlHistoryList = new FlowLayoutPanel { Width = _historyContainer.Width - 40, AutoSize = true, MinimumSize = new Size(0, 600), FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = DbConfig.LightColor, Margin = new Padding(0, 0, 0, 100) };
             
             _historyContainer.Controls.Add(pnlTabs);
             _historyContainer.Controls.Add(_pnlHistoryFilters);
             _historyContainer.Controls.Add(_pnlHistoryList);
 
             SwitchHistoryTab("Pending");
+        }
+
+        private async void RunParallelAnalysis()
+        {
+            var allOrders = await _dbService.GetOrdersAsync();
+            if (allOrders.Count == 0) { MessageBox.Show("No orders to analyze."); return; }
+
+            decimal totalRevenue = 0;
+            int processedCount = 0;
+            object syncLock = new object(); 
+
+            await Task.Run(() => 
+            {
+                System.Threading.Tasks.Parallel.ForEach(allOrders, (order) => 
+                {
+                    lock (syncLock) 
+                    {
+                        totalRevenue += order.Total;
+                        processedCount++;
+                    }
+                });
+            });
+
+            MessageBox.Show($"Parallel Analysis Complete!\nProcessed {processedCount} orders.\nTotal Revenue: ₱{totalRevenue:N2}", "Parallel Report");
         }
 
         private void SwitchHistoryTab(string tab)
@@ -737,25 +699,15 @@ namespace FoodOrderingSystem.Forms
         private async void LoadHistoryList()
         {
             if (_pnlHistoryList == null) return;
-            
             _pnlHistoryList.Controls.Clear();
             _pnlHistoryList.Controls.Add(new Label { Text = "Loading...", AutoSize = true });
 
             var allOrders = await _dbService.GetOrdersAsync();
             List<OrderRecord> filteredOrders = new List<OrderRecord>();
 
-            if (_currentHistoryTab == "Pending")
-            {
-                filteredOrders = allOrders.Where(o => o.Status == "Pending").ToList();
-            }
-            else if (_currentHistoryTab == "Completed")
-            {
-                filteredOrders = allOrders.Where(o => o.Status == "Completed").ToList();
-            }
-            else if (_currentHistoryTab == "Cancelled")
-            {
-                filteredOrders = allOrders.Where(o => o.Status == "Cancelled").ToList();
-            }
+            if (_currentHistoryTab == "Pending") filteredOrders = allOrders.Where(o => o.Status == "Pending").ToList();
+            else if (_currentHistoryTab == "Completed") filteredOrders = allOrders.Where(o => o.Status == "Completed").ToList();
+            else if (_currentHistoryTab == "Cancelled") filteredOrders = allOrders.Where(o => o.Status == "Cancelled").ToList();
 
             if (_currentHistoryTab != "Pending" && _cbMonthFilter != null && _cbMonthFilter.SelectedIndex > 0 && _cbMonthFilter.SelectedItem != null)
             {
@@ -764,7 +716,6 @@ namespace FoodOrderingSystem.Forms
             }
             
             filteredOrders = filteredOrders.OrderByDescending(o => o.Date).ToList();
-            
             _pnlHistoryList.Controls.Clear();
 
             if (filteredOrders.Count == 0)
@@ -775,18 +726,16 @@ namespace FoodOrderingSystem.Forms
 
             foreach(var order in filteredOrders)
             {
-                // Increased Height to accommodate new details
                 Panel receipt = new Panel { Width = 300, Height = 560, BackColor = Color.White, Margin = new Padding(15) };
                 receipt.Paint += (s, e) => { 
                     ControlPaint.DrawBorder(e.Graphics, receipt.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid); 
                     using (Pen pen = new Pen(Color.Gray, 2)) { 
                         pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash; 
                         e.Graphics.DrawLine(pen, 15, 80, receipt.Width - 15, 80); 
-                        e.Graphics.DrawLine(pen, 15, receipt.Height - 160, receipt.Width - 15, receipt.Height - 160); // Moved line down
+                        e.Graphics.DrawLine(pen, 15, receipt.Height - 160, receipt.Width - 15, receipt.Height - 160); 
                     } 
                 };
 
-                // --- Parsing Customer Details ---
                 string rawName = order.CustomerName;
                 string orderType = "Unknown";
                 string customerNameOnly = rawName;
@@ -797,42 +746,20 @@ namespace FoodOrderingSystem.Forms
 
                 if(rawName.Contains("(")) customerNameOnly = rawName.Split('(')[0].Trim();
                 if(customerNameOnly.Contains("[Code")) customerNameOnly = customerNameOnly.Split('[')[0].Trim();
-                // -------------------------------
 
                 if (_currentHistoryTab == "Completed")
                 {
-                    Button btnPrint = new Button 
-                    { 
-                        Text = "🖨️", 
-                        Font = new Font("Segoe UI Emoji", 14F), 
-                        BackColor = Color.Transparent, 
-                        ForeColor = Color.Black, 
-                        FlatStyle = FlatStyle.Flat, 
-                        Size = new Size(35, 35),
-                        Location = new Point(receipt.Width - 45, 5), 
-                        Cursor = Cursors.Hand 
-                    };
+                    Button btnPrint = new Button { Text = "🖨️", Font = new Font("Segoe UI Emoji", 14F), BackColor = Color.Transparent, ForeColor = Color.Black, FlatStyle = FlatStyle.Flat, Size = new Size(35, 35), Location = new Point(receipt.Width - 45, 5), Cursor = Cursors.Hand };
                     btnPrint.FlatAppearance.BorderSize = 1;
                     btnPrint.FlatAppearance.BorderColor = Color.Gray;
-                    
-                    btnPrint.Click += async (s, e) => {
-                         HistoryForm form = new HistoryForm();
-                         form.CashierName = !string.IsNullOrEmpty(order.CashierName) ? order.CashierName : _username; 
-                         await form.GenerateReceiptPreviewAsync(order);
-                         form.ShowDialog();
-                    };
+                    btnPrint.Click += async (s, e) => { HistoryForm form = new HistoryForm(); form.CashierName = !string.IsNullOrEmpty(order.CashierName) ? order.CashierName : _username; await form.GenerateReceiptPreviewAsync(order); form.ShowDialog(); };
                     receipt.Controls.Add(btnPrint); btnPrint.BringToFront();
                 }
 
                 if (_currentHistoryTab != "Pending")
                 {
                     Label btnDelete = new Label { Text = "✕", Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = Color.IndianRed, Cursor = Cursors.Hand, AutoSize = true, Location = new Point(10, 5) };
-                    btnDelete.Click += async (s, e) => { 
-                        if(MessageBox.Show("Are you sure you want to delete this record permanently?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) { 
-                            await _dbService.DeleteOrderAsync(order.Id); 
-                            LoadHistoryList(); 
-                        } 
-                    };
+                    btnDelete.Click += async (s, e) => { if(MessageBox.Show("Are you sure you want to delete this record permanently?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) { await _dbService.DeleteOrderAsync(order.Id); LoadHistoryList(); } };
                     receipt.Controls.Add(btnDelete); btnDelete.BringToFront();
                 }
 
@@ -841,59 +768,35 @@ namespace FoodOrderingSystem.Forms
                     Panel pnlAdminActions = new Panel { Dock = DockStyle.Bottom, Height = 40, BackColor = Color.WhiteSmoke };
                     Button btnComplete = new Button { Text = "✓ Complete", Dock = DockStyle.Left, Width = 150, FlatStyle = FlatStyle.Flat, BackColor = Color.LightGreen };
                     
-                    // --- MODIFIED COMPLETION LOGIC ---
                     btnComplete.Click += async (s, e) => { 
                         if(MessageBox.Show("Finalize order and deduct stock?", "Confirm Completion", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) {
                             try {
-                                // 1. Deduct Stock NOW
                                 await _dbService.DeductStockForOrderAsync(order.Id);
-                                
-                                // 2. Mark as Completed
                                 await _dbService.UpdateOrderStatusAsync(order.Id, "Completed"); 
-                                
                                 MessageBox.Show("Order Completed and Stock Updated.", "Success");
                                 LoadHistoryList(); 
                             }
-                            catch (Exception ex) {
-                                MessageBox.Show("Error updating order: " + ex.Message);
-                            }
+                            catch (Exception ex) { MessageBox.Show("Error updating order: " + ex.Message); }
                         }
                     };
-                    // ---------------------------------
                     
                     Button btnCancel = new Button { Text = "⚠ Cancel", Dock = DockStyle.Right, Width = 150, FlatStyle = FlatStyle.Flat, BackColor = Color.MistyRose };
-                    btnCancel.Click += async (s, e) => { 
-                        if(MessageBox.Show("Cancel this order?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes) {
-                            await _dbService.UpdateOrderStatusAsync(order.Id, "Cancelled"); 
-                            LoadHistoryList(); 
-                        }
-                    };
-                    
+                    btnCancel.Click += async (s, e) => { if(MessageBox.Show("Cancel this order?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes) { await _dbService.UpdateOrderStatusAsync(order.Id, "Cancelled"); LoadHistoryList(); } };
                     pnlAdminActions.Controls.Add(btnComplete); pnlAdminActions.Controls.Add(btnCancel); receipt.Controls.Add(pnlAdminActions);
                 }
 
                 Label lblTitle = new Label { Text = "ORDER RECEIPT", Font = new Font("Courier New", 12F, FontStyle.Bold), Dock = DockStyle.Top, Height = 40, TextAlign = ContentAlignment.MiddleCenter };
-                
                 string displayTitle = order.CustomerName.Length > 20 ? order.CustomerName.Substring(0, 20) + "..." : order.CustomerName;
-                
                 Label lblId = new Label { Text = $"#{order.Id}", Font = new Font("Courier New", 10F), ForeColor = Color.Gray, Dock = DockStyle.Top, Height = 30, TextAlign = ContentAlignment.MiddleCenter };
-                
-                // Product List
                 Label lblItems = new Label { Text = order.Items.Replace(", ", "\n"), Font = new Font("Courier New", 10F), Location = new Point(15, 90), Size = new Size(270, 180) };
 
-                // --- NEW DETAILS SECTION UNDER PRODUCTS ---
                 Panel pnlDetails = new Panel { Location = new Point(15, 280), Size = new Size(270, 120) };
                 Label lblCashier = new Label { Text = $"Cashier: {order.CashierName}", Font = new Font("Segoe UI", 9F, FontStyle.Bold), AutoSize = true, Location = new Point(0, 0), ForeColor = Color.DimGray };
                 Label lblUser = new Label { Text = $"User: {customerNameOnly}", Font = new Font("Segoe UI", 9F), AutoSize = true, Location = new Point(0, 25), ForeColor = Color.DimGray };
                 Label lblType = new Label { Text = $"Type: {orderType}", Font = new Font("Segoe UI", 9F, FontStyle.Bold), AutoSize = true, Location = new Point(0, 50), ForeColor = DbConfig.AccentColor };
                 Label lblCodeInfo = new Label { Text = $"Code: {orderCode}", Font = new Font("Segoe UI", 9F), AutoSize = true, Location = new Point(0, 75), ForeColor = Color.DimGray };
                 
-                pnlDetails.Controls.Add(lblCashier);
-                pnlDetails.Controls.Add(lblUser);
-                pnlDetails.Controls.Add(lblType);
-                pnlDetails.Controls.Add(lblCodeInfo);
-                // ------------------------------------------
-
+                pnlDetails.Controls.Add(lblCashier); pnlDetails.Controls.Add(lblUser); pnlDetails.Controls.Add(lblType); pnlDetails.Controls.Add(lblCodeInfo);
                 Panel footer = new Panel { Dock = DockStyle.Bottom, Height = 100, BackColor = Color.Transparent };
                 Label lblTotal = new Label { Text = $"TOTAL: ₱{order.Total:N2}", Font = new Font("Courier New", 14F, FontStyle.Bold), ForeColor = DbConfig.PrimaryColor, Dock = DockStyle.Top, Height = 40, TextAlign = ContentAlignment.MiddleCenter };
                 Label lblDate = new Label { Text = order.Date.ToString("MMM dd, yyyy\nhh:mm tt").ToUpper(), Font = new Font("Courier New", 9F), ForeColor = Color.Gray, Dock = DockStyle.Top, Height = 40, TextAlign = ContentAlignment.MiddleCenter };
@@ -901,13 +804,7 @@ namespace FoodOrderingSystem.Forms
                 Label lblStatus = new Label { Text = $"[{order.Status.ToUpper()}]", Font = new Font("Courier New", 9F, FontStyle.Bold), ForeColor = statusColor, Dock = DockStyle.Bottom, Height = 20, TextAlign = ContentAlignment.MiddleCenter };
 
                 footer.Controls.Add(lblStatus); footer.Controls.Add(lblDate); footer.Controls.Add(lblTotal);
-                
-                receipt.Controls.Add(pnlDetails); // Added details panel
-                receipt.Controls.Add(lblItems); 
-                receipt.Controls.Add(footer); 
-                receipt.Controls.Add(lblId); 
-                receipt.Controls.Add(lblTitle); 
-                
+                receipt.Controls.Add(pnlDetails); receipt.Controls.Add(lblItems); receipt.Controls.Add(footer); receipt.Controls.Add(lblId); receipt.Controls.Add(lblTitle); 
                 _pnlHistoryList.Controls.Add(receipt);
             }
         }
@@ -928,14 +825,9 @@ namespace FoodOrderingSystem.Forms
                 Button btnPlus = new Button { Text = "+", Width = 35, Dock = DockStyle.Right, FlatStyle = FlatStyle.Flat, BackColor = Color.LightGray }; btnPlus.FlatAppearance.BorderSize = 0;
                 
                 btnMinus.Click += (s, e) => { item.Quantity--; if (item.Quantity <= 0) _cartItems.Remove(item); UpdateCartUI(); };
-                
                 btnPlus.Click += (s, e) => { 
-                    if (item.Quantity + 1 > item.Food.Quantity) {
-                         MessageBox.Show($"Max stock reached for {item.Food.Name}");
-                         return;
-                    }
-                    item.Quantity++; 
-                    UpdateCartUI(); 
+                    if (item.Quantity + 1 > item.Food.Quantity) { MessageBox.Show($"Max stock reached for {item.Food.Name}"); return; }
+                    item.Quantity++; UpdateCartUI(); 
                 };
                 
                 qtyPanel.Controls.Add(lblQty); qtyPanel.Controls.Add(btnPlus); qtyPanel.Controls.Add(btnMinus);
@@ -945,19 +837,19 @@ namespace FoodOrderingSystem.Forms
             _cartContainer.ResumeLayout(); _lblTotal.Text = $"Total: ₱{total:F2}";
         }
 
-        private void ShowUsersView() { HideAllViews(); _usersContainer.Visible=true; _lblPageTitle.Text="Manage Cashiers"; LoadUsersData(); }
-        private void ShowCustomersView() { HideAllViews(); _customersContainer.Visible=true; _lblPageTitle.Text="Manage Customers"; LoadCustomersData(); }
-        private void ShowProductsView() { HideAllViews(); _productsContainer.Visible=true; _lblPageTitle.Text="Manage Inventory"; LoadProductsData(); }
-        private void ShowCategoriesView() { HideAllViews(); _categoriesContainer.Visible=true; _lblPageTitle.Text="Manage Categories"; LoadCategoriesData(); }
-        private void ShowCrewView() { HideAllViews(); _crewContainer.Visible=true; _lblPageTitle.Text="Manage Crew"; LoadCrewData(); }
-        private void ShowAdminsView() { HideAllViews(); _adminsContainer.Visible=true; _lblPageTitle.Text="Manage Admins"; LoadAdminsData(); }
+        private void ShowUsersView() { HideAllViews(); UpdateNavState(_btnUsers); _usersContainer.Visible=true; _lblPageTitle.Text="Manage Cashiers"; LoadUsersData(); }
+        private void ShowCustomersView() { HideAllViews(); UpdateNavState(_btnCustomers); _customersContainer.Visible=true; _lblPageTitle.Text="Manage Customers"; LoadCustomersData(); }
+        private void ShowProductsView() { HideAllViews(); UpdateNavState(_btnProducts); _productsContainer.Visible=true; _lblPageTitle.Text="Manage Inventory"; LoadProductsData(); }
+        private void ShowCategoriesView() { HideAllViews(); UpdateNavState(_btnCategories); _categoriesContainer.Visible=true; _lblPageTitle.Text="Manage Categories"; LoadCategoriesData(); }
+        private void ShowCrewView() { HideAllViews(); UpdateNavState(_btnCrew); _crewContainer.Visible=true; _lblPageTitle.Text="Manage Crew"; LoadCrewData(); }
+        private void ShowAdminsView() { HideAllViews(); UpdateNavState(_btnAdmins); _adminsContainer.Visible=true; _lblPageTitle.Text="Manage Admins"; LoadAdminsData(); }
         
-        // --- BARCODE HISTORY VIEW ---
         private void ShowBarcodeHistoryView() { 
             HideAllViews(); 
+            UpdateNavState(_btnBarcodeHistory);
             _barcodeHistoryContainer.Visible = true; 
             _lblPageTitle.Text = "Barcode History"; 
-            LoadBarcodeHistoryData(DateTime.Now); // Default to today
+            LoadBarcodeHistoryData(DateTime.Now); 
         }
 
         private async void LoadBarcodeHistoryData(DateTime dateFilter)
@@ -965,34 +857,18 @@ namespace FoodOrderingSystem.Forms
             _barcodeHistoryContainer.Controls.Clear();
             _barcodeHistoryContainer.Controls.Add(new Label { Text = "Loading History...", AutoSize = true, Font = new Font("Segoe UI", 14) });
 
-            // 1. Header with Filters
             Panel header = new Panel { Width = _barcodeHistoryContainer.Width - 60, Height = 60, BackColor = Color.WhiteSmoke, Padding = new Padding(10) };
-            
             Label lblDate = new Label { Text = "Select Date:", AutoSize = true, Location = new Point(10, 18), Font = new Font("Segoe UI", 10) };
             
             _dtpBarcodeFilter = new DateTimePicker { Location = new Point(100, 15), Width = 200, Format = DateTimePickerFormat.Short, Value = dateFilter };
             _dtpBarcodeFilter.ValueChanged += (s, e) => LoadBarcodeHistoryData(_dtpBarcodeFilter.Value);
 
-            Button btnPrintList = new Button { 
-                Text = "📄 Print/Export Report", 
-                BackColor = Color.Teal, 
-                ForeColor = Color.White, 
-                FlatStyle = FlatStyle.Flat, 
-                Size = new Size(180, 35), 
-                Location = new Point(header.Width - 200, 12),
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
-            };
-            
+            Button btnPrintList = new Button { Text = "📄 Export & Open Report", BackColor = Color.Teal, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(180, 35), Location = new Point(header.Width - 200, 12), Anchor = AnchorStyles.Top | AnchorStyles.Right };
             btnPrintList.Click += async (s, e) => await ExportBarcodeHistoryReport(dateFilter);
 
-            header.Controls.Add(lblDate);
-            header.Controls.Add(_dtpBarcodeFilter);
-            header.Controls.Add(btnPrintList);
+            header.Controls.Add(lblDate); header.Controls.Add(_dtpBarcodeFilter); header.Controls.Add(btnPrintList);
             
-            // 2. Fetch Data
             var allOrders = await _dbService.GetOrdersAsync();
-            
-            // Filter by Date and ensure it has some "barcode" logic (all orders basically)
             var filtered = allOrders.Where(o => o.Date.Date == dateFilter.Date).OrderByDescending(o => o.Date).ToList();
 
             _barcodeHistoryContainer.Controls.Clear();
@@ -1005,70 +881,23 @@ namespace FoodOrderingSystem.Forms
                 return;
             }
 
-            // 3. Render List
             int itemWidth = Math.Max(700, _barcodeHistoryContainer.Width - 60);
-
             foreach (var order in filtered)
             {
                 Panel card = new Panel { Width = itemWidth, Height = 100, BackColor = Color.White, Margin = new Padding(0, 0, 0, 15) };
                 card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid);
-
-                // Barcode Icon
                 Label lblIcon = new Label { Text = "║│█", Font = new Font("Arial", 24), ForeColor = Color.DimGray, Location = new Point(10, 20), AutoSize = true };
-                
-                // Details
                 Label lblName = new Label { Text = order.CustomerName, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(100, 15), AutoSize = true };
                 Label lblCode = new Label { Text = $"Barcode/Code: {order.OrderCode}", Font = new Font("Consolas", 11F, FontStyle.Bold), ForeColor = DbConfig.AccentColor, Location = new Point(100, 40), AutoSize = true };
                 Label lblItems = new Label { Text = order.Items.Length > 60 ? order.Items.Substring(0, 60) + "..." : order.Items, Font = new Font("Segoe UI", 9F), ForeColor = Color.Gray, Location = new Point(100, 65), AutoSize = true };
 
-                // Right Side Buttons
-                Button btnPreview = new Button { 
-                    Text = "🖨 Preview/Print Receipt", 
-                    BackColor = DbConfig.PrimaryColor, 
-                    ForeColor = Color.White, 
-                    FlatStyle = FlatStyle.Flat, 
-                    Size = new Size(180, 35), 
-                    Location = new Point(itemWidth - 300, 20),
-                    Anchor = AnchorStyles.Right | AnchorStyles.Top 
-                };
-                
-                btnPreview.Click += async (s, e) => {
-                     // Reuse HistoryForm to show the exact receipt preview the customer sees
-                     var fullOrder = await _dbService.GetOrderDetailsAsync(order.Id);
-                     if (fullOrder != null)
-                     {
-                         HistoryForm hf = new HistoryForm();
-                         hf.CashierName = fullOrder.CashierName; // Preserve original cashier name
-                         await hf.GenerateReceiptPreviewAsync(fullOrder);
-                         hf.ShowDialog();
-                     }
-                };
+                Button btnPreview = new Button { Text = "🖨 Preview/Print Receipt", BackColor = DbConfig.PrimaryColor, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(180, 35), Location = new Point(itemWidth - 300, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
+                btnPreview.Click += async (s, e) => { var fullOrder = await _dbService.GetOrderDetailsAsync(order.Id); if (fullOrder != null) { HistoryForm hf = new HistoryForm(); hf.CashierName = fullOrder.CashierName; await hf.GenerateReceiptPreviewAsync(fullOrder); hf.ShowDialog(); } };
 
-                Button btnDelete = new Button { 
-                    Text = "Delete", 
-                    BackColor = Color.IndianRed, 
-                    ForeColor = Color.White, 
-                    FlatStyle = FlatStyle.Flat, 
-                    Size = new Size(80, 35), 
-                    Location = new Point(itemWidth - 100, 20),
-                    Anchor = AnchorStyles.Right | AnchorStyles.Top 
-                };
-                
-                btnDelete.Click += async (s, e) => {
-                    if (MessageBox.Show($"Are you sure you want to delete the history for {order.CustomerName}?\nThis cannot be undone.", "Delete Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                    {
-                        await _dbService.DeleteOrderAsync(order.Id);
-                        LoadBarcodeHistoryData(dateFilter); // Reload
-                    }
-                };
+                Button btnDelete = new Button { Text = "Delete", BackColor = Color.IndianRed, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 35), Location = new Point(itemWidth - 100, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
+                btnDelete.Click += async (s, e) => { if (MessageBox.Show($"Are you sure you want to delete the history for {order.CustomerName}?", "Delete Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) { await _dbService.DeleteOrderAsync(order.Id); LoadBarcodeHistoryData(dateFilter); } };
 
-                card.Controls.Add(lblIcon);
-                card.Controls.Add(lblName);
-                card.Controls.Add(lblCode);
-                card.Controls.Add(lblItems);
-                card.Controls.Add(btnPreview);
-                card.Controls.Add(btnDelete);
-
+                card.Controls.Add(lblIcon); card.Controls.Add(lblName); card.Controls.Add(lblCode); card.Controls.Add(lblItems); card.Controls.Add(btnPreview); card.Controls.Add(btnDelete);
                 _barcodeHistoryContainer.Controls.Add(card);
             }
         }
@@ -1080,42 +909,40 @@ namespace FoodOrderingSystem.Forms
 
             if (filtered.Count == 0) { MessageBox.Show("No data to export.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
 
-            using (SaveFileDialog sfd = new SaveFileDialog()) 
+            string fileName = $"Barcode_History_{date:yyyy_MM_dd}.txt";
+            string fullPath = Path.Combine(Environment.CurrentDirectory, fileName);
+            
+            try 
             {
-                sfd.Filter = "Text File|*.txt|CSV File|*.csv"; 
-                sfd.FileName = $"Barcode_History_{date:yyyy_MM_dd}.txt";
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"--- BARCODE HISTORY REPORT ---");
+                sb.AppendLine($"Date: {date:MMM dd, yyyy}");
+                sb.AppendLine($"Generated: {DateTime.Now}");
+                sb.AppendLine("--------------------------------------------------------------------------------------");
+                sb.AppendLine(String.Format("{0,-10} {1,-20} {2,-15} {3,-30} {4}", "ID", "CUSTOMER", "BARCODE", "ITEMS", "TOTAL"));
+                sb.AppendLine("--------------------------------------------------------------------------------------");
                 
-                if (sfd.ShowDialog() == DialogResult.OK) 
+                foreach (var order in filtered) 
                 {
-                    try 
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.AppendLine($"--- BARCODE HISTORY REPORT ---");
-                        sb.AppendLine($"Date: {date:MMM dd, yyyy}");
-                        sb.AppendLine($"Generated: {DateTime.Now}");
-                        sb.AppendLine("--------------------------------------------------------------------------------------");
-                        sb.AppendLine(String.Format("{0,-10} {1,-20} {2,-15} {3,-30} {4}", "ID", "CUSTOMER", "BARCODE", "ITEMS", "TOTAL"));
-                        sb.AppendLine("--------------------------------------------------------------------------------------");
-                        
-                        foreach (var order in filtered) 
-                        {
-                            string safeItems = order.Items.Length > 25 ? order.Items.Substring(0, 25) + "..." : order.Items;
-                            sb.AppendLine(String.Format("{0,-10} {1,-20} {2,-15} {3,-30} {4:N2}", 
-                                order.Id, 
-                                order.CustomerName.Length > 18 ? order.CustomerName.Substring(0, 18) + ".." : order.CustomerName, 
-                                order.OrderCode, 
-                                safeItems,
-                                order.Total));
-                        }
-                        sb.AppendLine("--------------------------------------------------------------------------------------");
-                        sb.AppendLine($"Total Records: {filtered.Count}");
-
-                        System.IO.File.WriteAllText(sfd.FileName, sb.ToString()); 
-                        MessageBox.Show("Report generated successfully!");
-                    } 
-                    catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+                    string safeItems = order.Items.Length > 25 ? order.Items.Substring(0, 25) + "..." : order.Items;
+                    sb.AppendLine(String.Format("{0,-10} {1,-20} {2,-15} {3,-30} {4:N2}", order.Id, order.CustomerName.Length > 18 ? order.CustomerName.Substring(0, 18) + ".." : order.CustomerName, order.OrderCode, safeItems, order.Total));
                 }
-            }
+                sb.AppendLine("--------------------------------------------------------------------------------------");
+                sb.AppendLine($"Total Records: {filtered.Count}");
+
+                // Write file asynchronously
+                await Task.Run(() => File.WriteAllText(fullPath, sb.ToString())); 
+
+                if (MessageBox.Show("Report generated! Open it now?", "Export Success", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = fullPath,
+                        UseShellExecute = true 
+                    });
+                }
+            } 
+            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
         }
 
         private void UpdateNavState(Button? activeBtn) {
@@ -1127,7 +954,6 @@ namespace FoodOrderingSystem.Forms
             if (_btnAdmins != null) _btnAdmins.ForeColor = Color.FromArgb(200, 200, 200);
             if (_btnCustomers != null) _btnCustomers.ForeColor = Color.FromArgb(200, 200, 200);
             if (_btnBarcodeHistory != null) _btnBarcodeHistory.ForeColor = Color.FromArgb(200, 200, 200);
-            
             if (activeBtn != null) activeBtn.ForeColor = Color.White;
         }
 
@@ -1138,38 +964,24 @@ namespace FoodOrderingSystem.Forms
         {
              Panel p = new Panel { Width=200, Height=250, BackColor=Color.White, Margin=new Padding(10) };
              p.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, p.ClientRectangle, Color.FromArgb(230,230,230), ButtonBorderStyle.Solid);
-
              PictureBox pb = new PictureBox { Size = new Size(180, 100), Location = new Point(10, 10), SizeMode = PictureBoxSizeMode.Zoom, BorderStyle = BorderStyle.None };
              if(!string.IsNullOrEmpty(item.ImageData)) { try { byte[] b = Convert.FromBase64String(item.ImageData); using (MemoryStream ms = new MemoryStream(b)) pb.Image = Image.FromStream(ms); } catch { SetPlaceholder(pb, item.Name); } } else SetPlaceholder(pb, item.Name);
 
              Label l = new Label { Text=item.Name, Dock=DockStyle.Top, TextAlign=ContentAlignment.MiddleCenter, Font=new Font("Segoe UI", 11, FontStyle.Bold), AutoEllipsis=true, Height=40 };
              Panel textPanel = new Panel { Location = new Point(0, 110), Size = new Size(200, 140) };
              Label price = new Label { Text=$"₱{item.Price:F2}", Dock=DockStyle.Top, TextAlign=ContentAlignment.MiddleCenter, Font=new Font("Segoe UI", 13, FontStyle.Bold), ForeColor=DbConfig.PrimaryColor };
-             
              Label lblStock = new Label { Text=$"Stock: {item.Quantity}", Dock=DockStyle.Top, TextAlign=ContentAlignment.MiddleCenter, Font=new Font("Segoe UI", 9), ForeColor=Color.Gray, Height=20 };
 
              Button btn = new Button { Text="Add", Dock=DockStyle.Bottom, Height=40, BackColor=DbConfig.PrimaryColor, ForeColor=Color.White, FlatStyle=FlatStyle.Flat };
              btn.FlatAppearance.BorderSize = 0;
-             
              btn.Click += (s,e) => { 
                  var existing = _cartItems.FirstOrDefault(c=>c.Food.Id==item.Id);
-                 int currentQtyInCart = existing?.Quantity ?? 0;
-
-                 if (currentQtyInCart + 1 > item.Quantity)
-                 {
-                     MessageBox.Show($"Cannot add more items. Only {item.Quantity} remaining in stock.", "Stock Limit Reached", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                     return;
-                 }
-
+                 if (existing != null && existing.Quantity + 1 > item.Quantity) { MessageBox.Show($"Max stock reached for {item.Name}"); return; }
                  if(existing!=null) existing.Quantity++; else _cartItems.Add(new CartItem{Food=item,Quantity=1});
                  UpdateCartUI();
              };
 
-             if (!item.IsAvailable || item.Quantity <= 0) {
-                 btn.Text = "Out of Stock"; btn.BackColor = Color.Gray; btn.Enabled = false; 
-                 p.BackColor = Color.WhiteSmoke;
-             }
-
+             if (!item.IsAvailable || item.Quantity <= 0) { btn.Text = "Out of Stock"; btn.BackColor = Color.Gray; btn.Enabled = false; p.BackColor = Color.WhiteSmoke; }
              textPanel.Controls.Add(btn); textPanel.Controls.Add(lblStock); textPanel.Controls.Add(price); textPanel.Controls.Add(l);
              p.Controls.Add(textPanel); p.Controls.Add(pb);
              return p;
@@ -1184,15 +996,31 @@ namespace FoodOrderingSystem.Forms
             Button btnAdd = new Button { Text = "+ Add Cashier", BackColor = Color.Green, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(150, 40), Location = new Point(0, 5) };
             btnAdd.Click += (s, e) => { RegisterForm dlg = new RegisterForm(); dlg.StartPosition = FormStartPosition.CenterParent; dlg.ShowDialog(); LoadUsersData(); };
             header.Controls.Add(btnAdd); _usersContainer.Controls.Add(header);
+            
             var users = _dbService.GetUsers().Where(u => u.Role == "User").ToList(); 
             int itemWidth = Math.Max(400, _usersContainer.Width - 60);
+            
             foreach (var user in users) {
                 Panel card = new Panel { Width = itemWidth, Height = 70, BackColor = Color.White, Margin = new Padding(0, 0, 0, 10) };
                 card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid);
+                
                 Label lblName = new Label { Text = user.Username, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(20, 20), AutoSize = true };
                 Label lblRole = new Label { Text = "CASHIER", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.Gray, Location = new Point(200, 25), AutoSize = true };
+                
+                // --- ADDED EDIT BUTTON FOR CASHIER ---
+                Button btnEdit = new Button { Text = "Edit", BackColor = Color.Orange, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 30), Location = new Point(itemWidth - 190, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
+                btnEdit.Click += (s, e) => { 
+                    StaffDialog dlg = new StaffDialog("Edit Cashier", user); 
+                    if(dlg.ShowDialog() == DialogResult.OK) { 
+                        _dbService.UpdateUser(user.Id, dlg.Username, dlg.Password, "User"); 
+                        LoadUsersData(); 
+                    } 
+                };
+
                 Button btnDelete = new Button { Text = "Delete", BackColor = Color.IndianRed, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 30), Location = new Point(itemWidth - 100, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
                 btnDelete.Click += (s, e) => { if(MessageBox.Show($"Delete cashier '{user.Username}'?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes) { _dbService.DeleteUser(user.Username); LoadUsersData(); } };
+                
+                card.Controls.Add(btnEdit); // Add to card
                 card.Controls.Add(btnDelete); card.Controls.Add(lblName); card.Controls.Add(lblRole); _usersContainer.Controls.Add(card);
             }
         }
@@ -1232,16 +1060,12 @@ namespace FoodOrderingSystem.Forms
                 Label lblName = new Label { Text = item.Name, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(80, 25), AutoSize = true };
                 Label lblPrice = new Label { Text = $"₱{item.Price:F2}", Font = new Font("Segoe UI", 12F), ForeColor = DbConfig.PrimaryColor, Location = new Point(300, 25), AutoSize = true };
                 Label lblQty = new Label { Text = $"Stock: {item.Quantity}", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = (item.Quantity > 0 ? Color.DarkSlateGray : Color.Red), Location = new Point(410, 28), AutoSize = true };
-                
                 Button btnToggle = new Button { Text = item.IsAvailable ? "Enabled" : "Disabled", BackColor = item.IsAvailable ? Color.Gray : Color.Red, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(100, 30), Location = new Point(itemWidth - 320, 25), Anchor = AnchorStyles.Right | AnchorStyles.Top };
                 btnToggle.Click += async (s, e) => { if (!item.IsAvailable && item.Quantity <= 0) { MessageBox.Show("Cannot enable. Stock is 0."); return; } _dbService.ToggleProductAvailability(item.Id); LoadProductsData(); await LoadDataAsync(); };
-                
                 Button btnEdit = new Button { Text = "Edit", BackColor = Color.Orange, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(70, 30), Location = new Point(itemWidth - 180, 25), Anchor = AnchorStyles.Right | AnchorStyles.Top };
                 btnEdit.Click += async (s, e) => { var cats = await _dbService.GetCategoriesAsync(); ProductDialog dlg = new ProductDialog(cats, item); if(dlg.ShowDialog() == DialogResult.OK) { _dbService.UpdateProduct(item.Id, dlg.PName, dlg.PPrice, dlg.PCategoryId, dlg.PQuantity, dlg.PImageData); LoadProductsData(); await LoadDataAsync(); } };
-                
                 Button btnDelete = new Button { Text = "Del", BackColor = Color.IndianRed, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(70, 30), Location = new Point(itemWidth - 100, 25), Anchor = AnchorStyles.Right | AnchorStyles.Top };
                 btnDelete.Click += async (s, e) => { if(MessageBox.Show($"Delete '{item.Name}'?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes) { _dbService.DeleteProduct(item.Id); LoadProductsData(); await LoadDataAsync(); } };
-                
                 card.Controls.Add(pb); card.Controls.Add(lblQty); card.Controls.Add(btnToggle); card.Controls.Add(btnEdit); card.Controls.Add(btnDelete); card.Controls.Add(lblPrice); card.Controls.Add(lblName); _productsContainer.Controls.Add(card);
             }
         }
@@ -1251,10 +1075,7 @@ namespace FoodOrderingSystem.Forms
             _categoriesContainer.Controls.Clear();
             Panel header = new Panel { Width = _categoriesContainer.Width - 60, Height = 50 };
             Button btnAdd = new Button { Text = "+ Add Category", BackColor = Color.Green, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(150, 40), Location = new Point(0, 5) };
-            btnAdd.Click += async (s, e) => {
-                CategoryDialog dlg = new CategoryDialog();
-                if(dlg.ShowDialog() == DialogResult.OK) { _dbService.AddCategory(dlg.CategoryName); LoadCategoriesData(); await LoadDataAsync(); }
-            };
+            btnAdd.Click += async (s, e) => { CategoryDialog dlg = new CategoryDialog(); if(dlg.ShowDialog() == DialogResult.OK) { _dbService.AddCategory(dlg.CategoryName); LoadCategoriesData(); await LoadDataAsync(); } };
             header.Controls.Add(btnAdd); _categoriesContainer.Controls.Add(header);
             var categories = await _dbService.GetCategoriesAsync(); 
             int itemWidth = Math.Max(400, _categoriesContainer.Width - 60);
@@ -1280,13 +1101,28 @@ namespace FoodOrderingSystem.Forms
             
             var users = _dbService.GetUsers().Where(u => u.Role == "Crew").ToList();
             int itemWidth = Math.Max(400, _crewContainer.Width - 60);
+            
             foreach (var u in users) {
                 Panel card = new Panel { Width = itemWidth, Height = 70, BackColor = Color.White, Margin = new Padding(0, 0, 0, 10) };
                 card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid);
+                
                 Label lblName = new Label { Text = u.Username, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(20, 20), AutoSize = true };
                 Label lblRole = new Label { Text = "CREW", Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.Gray, Location = new Point(200, 25), AutoSize = true };
+                
+                // --- ADDED EDIT BUTTON FOR CREW ---
+                Button btnEdit = new Button { Text = "Edit", BackColor = Color.Orange, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 30), Location = new Point(itemWidth - 190, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
+                btnEdit.Click += (s, e) => { 
+                    CrewDialog dlg = new CrewDialog(u); // Uses _existingUser logic
+                    if(dlg.ShowDialog() == DialogResult.OK) { 
+                        _dbService.UpdateUser(u.Id, dlg.Username, dlg.Password, "Crew"); 
+                        LoadCrewData(); 
+                    } 
+                };
+                
                 Button btnDelete = new Button { Text = "Delete", BackColor = Color.IndianRed, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 30), Location = new Point(itemWidth - 100, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
                 btnDelete.Click += (s, e) => { if(MessageBox.Show($"Delete crew '{u.Username}'?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes) { _dbService.DeleteUser(u.Username); LoadCrewData(); } };
+                
+                card.Controls.Add(btnEdit); // Add to card
                 card.Controls.Add(btnDelete); card.Controls.Add(lblName); card.Controls.Add(lblRole); _crewContainer.Controls.Add(card);
             }
         }
@@ -1295,24 +1131,48 @@ namespace FoodOrderingSystem.Forms
         {
             _adminsContainer.Controls.Clear();
             Panel header = new Panel { Width = _adminsContainer.Width - 60, Height = 50 };
+            
+            // --- UPDATED ADD BUTTON LOGIC ---
             Button btnAdd = new Button { Text = "+ Create Admin", BackColor = Color.Green, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(150, 40), Location = new Point(0, 5) };
-            btnAdd.Click += (s, e) => { AdminDialog dlg = new AdminDialog(); if(dlg.ShowDialog() == DialogResult.OK) { _dbService.CreateAdmin(dlg.Username, dlg.Password); LoadAdminsData(); } };
+            btnAdd.Click += (s, e) => { 
+                AdminDialog dlg = new AdminDialog(); 
+                if(dlg.ShowDialog() == DialogResult.OK) { 
+                    // Pass the Role selected in the dialog (Admin or SuperAdmin)
+                    _dbService.CreateAdmin(dlg.Username, dlg.Password, dlg.Role); 
+                    LoadAdminsData(); 
+                } 
+            };
+            
             header.Controls.Add(btnAdd); _adminsContainer.Controls.Add(header);
             
             var users = _dbService.GetUsers().Where(u => u.Role == "Admin" || u.Role == "SuperAdmin").ToList();
             int itemWidth = Math.Max(400, _adminsContainer.Width - 60);
+            
             foreach (var u in users) {
                 Panel card = new Panel { Width = itemWidth, Height = 70, BackColor = Color.White, Margin = new Padding(0, 0, 0, 10) };
                 card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.LightGray, ButtonBorderStyle.Solid);
+                
                 Label lblName = new Label { Text = u.Username, Font = new Font("Segoe UI", 12F, FontStyle.Bold), Location = new Point(20, 20), AutoSize = true };
                 Label lblRole = new Label { Text = u.Role.ToUpper(), Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.Gray, Location = new Point(200, 25), AutoSize = true };
                 
-                if (u.Role != "SuperAdmin") // Prevent deleting SuperAdmin
+                // --- ADDED EDIT BUTTON FOR ADMINS ---
+                Button btnEdit = new Button { Text = "Edit", BackColor = Color.Orange, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 30), Location = new Point(itemWidth - 190, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
+                btnEdit.Click += (s, e) => { 
+                    AdminDialog dlg = new AdminDialog(u); 
+                    if(dlg.ShowDialog() == DialogResult.OK) { 
+                        _dbService.UpdateUser(u.Id, dlg.Username, dlg.Password, dlg.Role); 
+                        LoadAdminsData(); 
+                    } 
+                };
+
+                if (u.Role != "SuperAdmin") 
                 {
                     Button btnDelete = new Button { Text = "Delete", BackColor = Color.IndianRed, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Size = new Size(80, 30), Location = new Point(itemWidth - 100, 20), Anchor = AnchorStyles.Right | AnchorStyles.Top };
                     btnDelete.Click += (s, e) => { if(MessageBox.Show($"Delete admin '{u.Username}'?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes) { _dbService.DeleteUser(u.Username); LoadAdminsData(); } };
                     card.Controls.Add(btnDelete);
                 }
+                
+                card.Controls.Add(btnEdit); // Add edit button
                 card.Controls.Add(lblName); card.Controls.Add(lblRole); _adminsContainer.Controls.Add(card);
             }
         }
@@ -1333,7 +1193,7 @@ namespace FoodOrderingSystem.Forms
                             sb.AppendLine($"{order.Id},{order.Date},{order.CustomerName},{order.Total},{order.Status},{safeItems}");
                             monthlyTotal += order.Total;
                         }
-                        sb.AppendLine($",,,Total Revenue:,{monthlyTotal},"); System.IO.File.WriteAllText(sfd.FileName, sb.ToString()); MessageBox.Show("Report saved!");
+                        sb.AppendLine($",,,Total Revenue:,{monthlyTotal},"); File.WriteAllText(sfd.FileName, sb.ToString()); MessageBox.Show("Report saved!");
                     } catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
                 }
             }

@@ -5,23 +5,21 @@ using FoodOrderingSystem.Models;
 
 namespace FoodOrderingSystem.Forms
 {
-    public class AdminDialog : Form
+    // Generic Dialog for Adding/Editing Staff (Cashiers & Crew)
+    public class StaffDialog : Form
     {
         public string Username { get; private set; } = string.Empty;
         public string Password { get; private set; } = string.Empty;
-        public string Role { get; private set; } = "Admin"; // Default
 
         private TextBox _txtUser = new TextBox();
         private TextBox _txtPass = new TextBox();
-        private CheckBox _chkSuperAdmin = new CheckBox();
-        
         private User? _existingUser;
 
-        public AdminDialog(User? user = null)
+        public StaffDialog(string title, User? user = null)
         {
             _existingUser = user;
-            this.Text = _existingUser == null ? "Add New Admin" : "Edit Admin";
-            this.Size = new Size(350, 320);
+            this.Text = title;
+            this.Size = new Size(350, 280);
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = Color.White;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -41,28 +39,17 @@ namespace FoodOrderingSystem.Forms
             if (_existingUser != null)
             {
                 _txtUser.Text = _existingUser.Username;
-                Label lblHint = new Label { Text = "(Leave blank to keep existing password)", Location = new Point(20, 140), AutoSize = true, ForeColor = Color.Gray, Font = new Font("Segoe UI", 8) };
-                this.Controls.Add(lblHint);
+                Label lblNote = new Label { Text = "(Leave blank to keep existing password)", ForeColor = Color.Gray, Font = new Font("Segoe UI", 8), Location = new Point(20, 140), AutoSize = true };
+                this.Controls.Add(lblNote);
             }
-
-            // SUPER ADMIN TOGGLE
-            _chkSuperAdmin = new CheckBox 
-            { 
-                Text = "Grant Super Admin Privileges", 
-                Location = new Point(20, 170), 
-                AutoSize = true, 
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                ForeColor = Color.DarkRed
-            };
-            if (_existingUser != null && _existingUser.Role == "SuperAdmin") _chkSuperAdmin.Checked = true;
 
             Button btnSave = new Button 
             { 
-                Text = _existingUser == null ? "Create Admin" : "Update Admin", 
-                BackColor = Color.FromArgb(255, 87, 34), 
+                Text = _existingUser == null ? "Create Account" : "Update Account", 
+                BackColor = Color.FromArgb(76, 175, 80), // Green 
                 ForeColor = Color.White, 
                 FlatStyle = FlatStyle.Flat, 
-                Location = new Point(20, 210), 
+                Location = new Point(20, 170), 
                 Size = new Size(280, 40),
                 Cursor = Cursors.Hand
             };
@@ -71,7 +58,6 @@ namespace FoodOrderingSystem.Forms
                 {
                     Username = _txtUser.Text;
                     Password = _txtPass.Text;
-                    Role = _chkSuperAdmin.Checked ? "SuperAdmin" : "Admin";
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }
@@ -81,7 +67,6 @@ namespace FoodOrderingSystem.Forms
             this.Controls.Add(_txtUser);
             this.Controls.Add(lblPass);
             this.Controls.Add(_txtPass);
-            this.Controls.Add(_chkSuperAdmin);
             this.Controls.Add(btnSave);
         }
 

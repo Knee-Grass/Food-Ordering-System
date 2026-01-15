@@ -135,3 +135,23 @@ C:\xampp\htdocs\foodhub\obj\Debug\net10.0-windows\refint\FoodOrderingApp.dll
 C:\xampp\htdocs\foodhub\obj\Debug\net10.0-windows\FoodOrderingApp.pdb
 C:\xampp\htdocs\foodhub\obj\Debug\net10.0-windows\FoodOrderingApp.genruntimeconfig.cache
 C:\xampp\htdocs\foodhub\obj\Debug\net10.0-windows\ref\FoodOrderingApp.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\FoodOrderingApp.exe
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\FoodOrderingApp.deps.json
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\FoodOrderingApp.runtimeconfig.json
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\FoodOrderingApp.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\FoodOrderingApp.pdb
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\bin\Debug\net10.0-windows\Npgsql.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.csproj.AssemblyReference.cache
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.AssemblyInfoInputs.cache
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.AssemblyInfo.cs
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.csproj.CoreCompileInputs.cache
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.sourcelink.json
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrde.FFED4031.Up2Date
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\refint\FoodOrderingApp.dll
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.pdb
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\FoodOrderingApp.genruntimeconfig.cache
+C:\Users\RAVEN\OneDrive\Desktop\VSCode\FoodHub 2.0\obj\Debug\net10.0-windows\ref\FoodOrderingApp.dll
